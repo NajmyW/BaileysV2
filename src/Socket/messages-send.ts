@@ -337,6 +337,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		const isGroup = server === 'g.us'
 		const isStatus = jid === statusJid
 		const isLid = server === 'lid'
+		const isNewsletter = server === 'newsletter'
 
 		msgId = msgId || generateMessageIDV2(sock.user?.id)
 		useUserDevicesCache = useUserDevicesCache !== false
@@ -581,8 +582,51 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 						]
 					})
 				}
+				
 				if(additionalNodes && additionalNodes.length > 0) {
 					(stanza.content as BinaryNode[]).push(...additionalNodes)
+				}
+				const Msg = normalizeMessageContent(message)!
+                const key = getContentType(Msg)!
+                if(!isNewsletter && ((key === 'interactiveMessage' && Msg?.interactiveMessage?.nativeFlowMessage) || key === 'buttonsMessage')) {
+                    const nativeNode = {
+						  tag: 'biz',
+						  attrs: {},
+					      content: [{
+							  tag: 'interactive',
+						  	  attrs: {
+				   				  type: 'native_flow',
+			      				  v: '1'
+							  },
+							  content: [{
+			   					  tag: 'native_flow',
+			   					  attrs: { 
+			   					     name: 'quick_reply',
+			   				      },
+							  }]
+    					  }]
+				    }
+                    const resultNativeNode = filterNativeNode(additionalNodes);
+                    if(resultNativeNode && additionalNodes && additionalNodes.length > 0) {
+				        (stanza.content as BinaryNode[]).push(...resultNativeNode);
+				    } else {
+				        (stanza.content as BinaryNode[]).push(nativeNode);
+				    }
+				}
+				 				
+				if(message.listMessage) {
+					(stanza.content as BinaryNode[]).push({
+						tag: 'biz',
+						attrs: { },
+						content: [
+							{
+								tag: 'list',
+								attrs: getButtonArgs(message),
+							}
+						]
+					});
+
+					logger.debug({ jid }, 'adding business node')
 				}
 
 				logger.debug({ msgId }, `sending message to ${participants.length} devices`)
