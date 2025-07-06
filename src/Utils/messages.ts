@@ -428,6 +428,7 @@ export const generateWAMessageContent = async(
 				selectedIndex: message.buttonReply.index,
 			}
 			break
+			
 		case 'plain':
 			m.buttonsResponseMessage = {
 				selectedButtonId: message.buttonReply.id,
