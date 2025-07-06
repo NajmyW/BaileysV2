@@ -47,7 +47,15 @@ export interface WAUrlInfo {
     highQualityThumbnail?: proto.Message.IImageMessage
     originalThumbnailUrl?: string
 }
-
+export interface Carousel {   
+   image?: WAMediaUpload
+   video?: WAMediaUpload
+   product?: WASendableProduct
+   title?: string
+   caption?: string
+   footer?: string
+   buttons?: proto.Message.InteractiveMessage.NativeFlowMessage.NativeFlowButton[]
+}
 // types to generate WA messages
 type Mentionable = {
     /** list of jids that are mentioned in the accompanying text */
