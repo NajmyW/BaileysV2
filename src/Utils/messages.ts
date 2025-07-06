@@ -510,7 +510,7 @@ export const generateWAMessageContent = async(
 			options
 		)
 	}
-	if('buttons' in message && !!message.buttons) {
+		if('buttons' in message && !!message.buttons) {
 		const buttonsMessage: proto.Message.IButtonsMessage = {
 			buttons: message.buttons!.map(b => ({ ...b, type: proto.Message.ButtonsMessage.Button.Type.RESPONSE }))
 		}
@@ -531,11 +531,24 @@ export const generateWAMessageContent = async(
 		if('footer' in message && !!message.footer) {
 			buttonsMessage.footerText = message.footer
 		}
+		
+        if('title' in message && !!message.title) {
+        	buttonsMessage.text = message.title,
+			buttonsMessage.headerType = ButtonType.TEXT
+        }
+        
+        if('contextInfo' in message && !!message.contextInfo) {
+        	buttonsMessage.contextInfo = message.contextInfo
+        }
+        
+        if('mentions' in message && !!message.mentions) {
+        	buttonsMessage.contextInfo = { mentionedJid: message.mentions }
+        }
 
 		m = { buttonsMessage }
 	} else if('templateButtons' in message && !!message.templateButtons) {
 		const msg: proto.Message.TemplateMessage.IHydratedFourRowTemplate = {
-			hydratedButtons: message.templateButtons
+			hydratedButtons: message.hasOwnProperty("templateButtons") ? message.templateButtons : message.templateButtons
 		}
 
 		if('text' in message) {
@@ -559,20 +572,61 @@ export const generateWAMessageContent = async(
 				hydratedTemplate: msg
 			}
 		}
-	}
+    }
+	
+	if('interactiveButtons' in message && !!message.interactiveButtons) {
+	   const interactiveMessage: proto.Message.IInteractiveMessage = {
+	      nativeFlowMessage: WAProto.Message.InteractiveMessage.NativeFlowMessage.fromObject({ 
+	         buttons: message.interactiveButtons,
+	      })
+	   }
+	   
+	   if('text' in message) {
+	       body: interactiveMessage.body = { 
+	           text: message.text
+	       }
+	       
+	       header: interactiveMessage.header = {
+	          title: message.title,
+	          subtitle: message.subtitle,
+	          hasMediaAttachment: message?.media ?? false,
+	       }
 
-	if('sections' in message && !!message.sections) {
-		const listMessage: proto.Message.IListMessage = {
-			sections: message.sections,
-			buttonText: message.buttonText,
-			title: message.title,
-			footerText: message.footer,
-			description: message.text,
-			listType: proto.Message.ListMessage.ListType.SINGLE_SELECT
-		}
-
-		m = { listMessage }
+	   } else {
+	   
+	      if('caption' in message) {
+	          body: interactiveMessage.body = {
+	              text: message.caption
+	          }
+	          
+	          header: interactiveMessage.header = {
+	              title: message.title,
+	              subtitle: message.subtitle,
+	              hasMediaAttachment: message?.media ?? false,
+	          }	
+	       		  
+		      Object.assign(interactiveMessage.header, m)
+	      
+	      }	            
+	   }
+	   
+	   if('footer' in message && !!message.footer) {
+		   footer: interactiveMessage.footer = {
+		      text: message.footer
+		   }
+	   }		      
+	   
+       if('contextInfo' in message && !!message.contextInfo) {
+        	interactiveMessage.contextInfo = message.contextInfo
+       }
+        
+       if('mentions' in message && !!message.mentions) {
+        	interactiveMessage.contextInfo = { mentionedJid: message.mentions }
+       }
+       
+	   m = { interactiveMessage }
 	}
+	
 	if('viewOnce' in message && !!message.viewOnce) {
 		m = { viewOnceMessage: { message: m } }
 	}
