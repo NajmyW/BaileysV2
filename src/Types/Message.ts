@@ -61,6 +61,27 @@ type ViewOnce = {
     viewOnce?: boolean
 }
 
+type Shopable = {
+    shop?: proto.Message.InteractiveMessage.ShopMessage.Surface;
+    id?: string;
+    title?: string;
+    subtitle?: string;
+    media?: boolean;
+}
+
+type Collectionable = {
+    collection?: { bizJid?: string, id?: string, version?: number };
+    title?: string;
+    subtitle?: string;
+    media?: boolean;
+}
+
+type Cardsable = {
+    cards?: Carousel[];
+    title?: string;
+    subtitle?: string;
+}
+
 type Editable = {
   edit?: WAMessageKey
 }
