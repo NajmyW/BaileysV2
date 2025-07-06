@@ -28,7 +28,7 @@ import { sha256 } from './crypto'
 import { generateMessageIDV2, getKeyAuthor, unixTimestampSeconds } from './generics'
 import { ILogger } from './logger'
 import { downloadContentFromMessage, encryptedStream, generateThumbnail, getAudioDuration, getAudioWaveform, MediaDownloadOptions } from './messages-media'
-
+const ButtonType = proto.Message.ButtonsMessage.HeaderType
 type MediaUploadData = {
 	media: WAMediaUpload
 	caption?: string
