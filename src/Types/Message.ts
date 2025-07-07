@@ -66,7 +66,14 @@ type Contextable = {
     contextInfo?: proto.IContextInfo
 }
 type ViewOnce = {
-    viewOnce?: boolean
+    viewOnce ? : boolean
+}
+
+type ViewOnceV2 = {
+    viewOnceV2 ? : boolean;
+}
+type ViewOnceV2Extension = {
+    viewOnceV2Extension ? : boolean;
 }
 
 type Shopable = {
