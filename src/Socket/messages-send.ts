@@ -100,7 +100,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		}
 
 		if(type) {
-			node.attrs.type = type
+			node.attrs.type = isJidNewsletter(jid) ? 'read-self' : type
 		}
 
 		const remainingMessageIds = messageIds.slice(1)
@@ -407,7 +407,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 						if(isStatus && statusJidList) {
 							participantsList.push(...statusJidList)
 						}
-
+				
 						if(!isStatus) {
 							additionalAttributes = {
 								...additionalAttributes,
