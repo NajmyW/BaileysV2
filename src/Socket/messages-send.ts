@@ -598,12 +598,13 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 				   				  type: 'native_flow',
 			      				  v: '1'
 							  },
-							  content: [{
-			   					  tag: 'native_flow',
-			   					  attrs: { 
-			   					     name: 'quick_reply',
-			   				      },
-							  }]
+							content: [{
+							tag: 'native_flow',
+							attrs: {
+								v: '9',
+								name: 'mixed'
+							}
+						}]
     					  }]
 				    }
                     const resultNativeNode = filterNativeNode(additionalNodes);
@@ -680,11 +681,25 @@ const filterNativeNode = (nodeContent) => {
         }
     };
 	const getMessageType = (message: proto.IMessage) => {
-		if(message.pollCreationMessage || message.pollCreationMessageV2 || message.pollCreationMessageV3) {
-			return 'poll'
-		}
-
-		return 'text'
+		if (msg.viewOnceMessage) {
+	return getMessageType(msg.viewOnceMessage.message!)
+} else if (msg.viewOnceMessageV2) {
+	return getMessageType(msg.viewOnceMessageV2.message!)
+} else if (msg.viewOnceMessageV2Extension) {
+	return getMessageType(msg.viewOnceMessageV2Extension.message!)
+} else if (msg.ephemeralMessage) {
+	return getMessageType(msg.ephemeralMessage.message!)
+} else if (msg.documentWithCaptionMessage) {
+	return getMessageType(msg.documentWithCaptionMessage.message!)
+} else if (msg.reactionMessage) {
+	return 'reaction'
+} else if (msg.pollCreationMessage || msg.pollCreationMessageV2 || msg.pollCreationMessageV3 || msg.pollUpdateMessage) {
+	return 'poll'
+} else if (getMediaType(msg)) {
+	return 'media'
+} else {
+	return 'text'
+}
 	}
 
 	const getMediaType = (message: proto.IMessage) => {
@@ -770,6 +785,115 @@ const filterNativeNode = (nodeContent) => {
 		sendPeerDataOperationMessage,
 		createParticipantNodes,
 		getUSyncDevices,
+		sendStatusMentions: async(
+		   content: AnyMessageContent, 
+		   jids: string[] = []
+		) => { 
+		   const userJid = jidNormalizedUser(authState.creds.me!.id) 		       
+           let allUsers: string[] = [];
+
+           for(const id of jids) {
+		      const { user, server } = jidDecode(id)!
+		      const isGroup = server === 'g.us'
+              const isPerson = server === 's.whatsapp.net'
+              if(isGroup) {
+                 let userId = await groupMetadata(id)
+                 let participant = await userId.participants
+                 let users = await Promise.all(participant.map(u => jidNormalizedUser(u.id))); 
+                 allUsers = [...allUsers as string[], ...users as string[]];
+              } else if(isPerson) {
+                 let users = await Promise.all(jids.map(id => id.replace(/\b\d{18}@.{4}\b/g, '')));
+                 allUsers = [...allUsers as string[], ...users as string[]];
+              }
+              if(!allUsers.find(user => user.includes(userJid))) {
+                 (allUsers as string[]).push(userJid)
+              }
+           };
+           const getRandomHexColor = () => {
+              return "#" + Math.floor(Math.random() * 16777215)
+                 .toString(16)
+                 .padStart(6, "0");
+           }
+           let mediaHandle;
+           let msg = await generateWAMessage(
+               STORIES_JID, 
+               content, 
+               {
+				   logger,
+				   userJid,
+				   getUrlInfo: text => getUrlInfo(
+						text,
+						{
+							thumbnailWidth: linkPreviewImageThumbnailWidth,
+							fetchOpts: {
+								timeout: 3_000,
+								...axiosOptions || { }
+							},
+							logger,
+							uploadImage: generateHighQualityLinkPreview
+							? waUploadToServer
+							: undefined
+						},
+				   ),
+				   upload: async(readStream: Readable, opts: WAMediaUploadFunctionOpts) => {
+						const up = await waUploadToServer(readStream, { ...opts })
+					    mediaHandle = up.handle
+					    return up
+			       },
+				   mediaCache: config.mediaCache,
+				   options: config.options,
+                   backgroundColor: getRandomHexColor(),
+                   font: Math.floor(Math.random() * 9),
+               }
+           );
+           await relayMessage(STORIES_JID, msg.message!, { 
+                   messageId: msg.key.id!, 
+                   statusJidList: allUsers,
+                   additionalNodes: [
+                        {
+                           tag: 'meta',
+                           attrs: { },
+                           content: [
+                              { 
+                                 tag: 'mentioned_users',
+                                 attrs: { },
+                                 content: jids.map(jid => ({
+                                    tag: 'to',
+                                    attrs: { jid },
+                                    content: undefined,
+                                    })
+                                 ),
+                              },
+                           ],
+                        },
+                   ], 
+               }
+           );
+           jids.forEach(async id => {
+               id = jidNormalizedUser(id)!
+		       const { user, server } = jidDecode(id)!
+               const isPerson = server === 's.whatsapp.net'
+               let type = isPerson
+                   ? 'statusMentionMessage' 
+                   : 'groupStatusMentionMessage'
+               await relayMessage(
+                   id, 
+                   {
+                       [type]: {
+                          message: {
+                             protocolMessage: {
+                                key: msg.key,
+                                type: 25,
+                             },
+                          },
+                       },
+                   }, 
+               { });
+               await delay(2500)       
+               }
+           );
+           return msg
+        },
 		updateMediaMessage: async(message: proto.IWebMessageInfo) => {
 			const content = assertMediaContent(message.message)
 			const mediaKey = content.mediaKey!
@@ -872,6 +996,8 @@ const filterNativeNode = (nodeContent) => {
 				const isEditMsg = 'edit' in content && !!content.edit
 				const isPinMsg = 'pin' in content && !!content.pin
 				const isPollMessage = 'poll' in content && !!content.poll
+				const isAiMsg = 'ai' in content && !!content.ai
+				
 				const additionalAttributes: BinaryNodeAttributes = { }
 				const additionalNodes: BinaryNode[] = []
 				// required for delete
@@ -893,6 +1019,14 @@ const filterNativeNode = (nodeContent) => {
 							polltype: 'creation'
 						},
 					} as BinaryNode)
+				} else if(isAiMsg) {
+				    (additionalNodes as BinaryNode[]).push({
+                        attrs: {
+                            biz_bot: '1'
+                        },
+                        tag: 'bot'
+                        }
+                    )
 				}
 
 				if('cachedGroupMetadata' in options) {
