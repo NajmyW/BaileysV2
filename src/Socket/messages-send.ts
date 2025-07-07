@@ -676,7 +676,8 @@ const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
         native_flow_name: firstButtonName,
       },
     }.attrs;
-  } else if (nativeFlow && nativeFlowSpecials.includes(firstButtonName)) {
+  } else if (firstButtonName && nativeFlowSpecials.includes(firstButtonName)
+) {
     return {
       tag: 'biz',
       attrs: {},
