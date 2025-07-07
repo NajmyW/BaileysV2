@@ -532,12 +532,12 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 						})
 					}
 				}
-
+				
 				const stanza: BinaryNode = {
 					tag: 'message',
 					attrs: {
-						id: msgId,
-						type: getMessageType(message),
+						id: msgId!,
+						type: isNewsletter ? getTypeMessage(message) : 'text',
 						...(additionalAttributes || {})
 					},
 					content: binaryNodeContent
@@ -700,7 +700,7 @@ const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
         },
       ],
     }.attrs;
-  } else if (nativeFlow || message.buttonsMessage) {
+  } else if (message.buttonsMessage || nativeFlow) {
     return {
       tag: 'biz',
       attrs: {},
