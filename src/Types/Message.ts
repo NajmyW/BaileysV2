@@ -137,6 +137,12 @@ export type PollMessageOptions = {
     toAnnouncementGroup?: boolean
 }
 
+export type PollResultMessage = {
+    name: string
+    votes: proto.Message.PollResultSnapshotMessage.PollVote[]
+    messageSecret?: Uint8Array
+}
+
 type SharePhoneNumber = {
     sharePhoneNumber: boolean
 }

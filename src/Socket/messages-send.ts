@@ -9,7 +9,6 @@ import { getUrlInfo } from '../Utils/link-preview'
 import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET, STORIES_JID } from '../WABinary'
 import { USyncQuery, USyncUser } from '../WAUSync'
 import { makeGroupsSocket } from './groups'
-import ListType = proto.Message.ListMessage.ListType;
 import { Readable } from 'stream'
 
 export const makeMessagesSocket = (config: SocketConfig) => {
@@ -651,24 +650,99 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		return 'list'
 	} else if (message.listResponseMessage) {
 		return 'list_response'
-	}
+	} else if (message.interactiveMessage?.nativeFlowMessage) {
+	return 'native_flow'
+}
 }
 
 const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
-	if (message.templateMessage) {
-		// TODO: Add attributes
-		return {}
-	} else if (message.listMessage) {
-		const type = message.listMessage.listType
-		if (!type) {
-			throw new Boom('Expected list type inside message')
-		}
-		
-		return { v: '2', type: ListType[type].toLowerCase() }
-	} else {
-		return {}
-	}
-}
+  const nativeFlow = message.interactiveMessage?.nativeFlowMessage;
+  const firstButtonName = nativeFlow?.buttons?.[0]?.name;
+
+  const nativeFlowSpecials = [
+    'mpm',
+    'cta_catalog',
+    'send_location',
+    'call_permission_request',
+    'wa_payment_transaction_details',
+    'automated_greeting_message_view_catalog',
+  ];
+
+  if (nativeFlow && (firstButtonName === 'review_and_pay' || firstButtonName === 'payment_info')) {
+    return {
+      tag: 'biz',
+      attrs: {
+        native_flow_name: firstButtonName,
+      },
+    }.attrs;
+  } else if (nativeFlow && nativeFlowSpecials.includes(firstButtonName)) {
+    return {
+      tag: 'biz',
+      attrs: {},
+      content: [
+        {
+          tag: 'interactive',
+          attrs: {
+            type: 'native_flow',
+            v: '1',
+          },
+          content: [
+            {
+              tag: 'native_flow',
+              attrs: {
+                v: '2',
+                name: firstButtonName,
+              },
+            },
+          ],
+        },
+      ],
+    }.attrs;
+  } else if (nativeFlow || message.buttonsMessage) {
+    return {
+      tag: 'biz',
+      attrs: {},
+      content: [
+        {
+          tag: 'interactive',
+          attrs: {
+            type: 'native_flow',
+            v: '1',
+          },
+          content: [
+            {
+              tag: 'native_flow',
+              attrs: {
+                v: '9',
+                name: 'mixed',
+              },
+            },
+          ],
+        },
+      ],
+    }.attrs;
+  } else if (message.listMessage) {
+    return {
+      tag: 'biz',
+      attrs: {},
+      content: [
+        {
+          tag: 'list',
+          attrs: {
+            v: '2',
+            type: 'product_list',
+          },
+        },
+      ],
+    }.attrs;
+  } else {
+    return {
+      tag: 'biz',
+      attrs: {},
+    }.attrs;
+  }
+};
+
 const filterNativeNode = (nodeContent) => {
         if(Array.isArray(nodeContent)) {
             return nodeContent!.filter((item) => {
@@ -1017,7 +1091,7 @@ const filterNativeNode = (nodeContent) => {
 						},
 					} as BinaryNode)
 				} else if(isAiMsg) {
-				    (additionalNodes as BinaryNode[]).push({
+				    additionalNodes.push({
                         attrs: {
                             biz_bot: '1'
                         },
