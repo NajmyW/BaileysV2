@@ -8,8 +8,8 @@ import { aggregateMessageKeysNotFromMe, assertMediaContent, bindWaitForEvent, de
 import { getUrlInfo } from '../Utils/link-preview'
 import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET, STORIES_JID } from '../WABinary'
 import { USyncQuery, USyncUser } from '../WAUSync'
-import { makeGroupsSocket } from './groups'
 import { Readable } from 'stream'
+import { makeNewsletterSocket } from './newsletter'
 
 export const makeMessagesSocket = (config: SocketConfig) => {
 	const {
@@ -18,9 +18,9 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		generateHighQualityLinkPreview,
 		options: axiosOptions,
 		patchMessageBeforeSending,
-		cachedGroupMetadata,
 	} = config
-	const sock = makeGroupsSocket(config)
+	const sock = makeNewsletterSocket(config)
+
 	const {
 		ev,
 		authState,
