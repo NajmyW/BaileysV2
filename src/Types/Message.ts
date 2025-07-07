@@ -66,14 +66,7 @@ type Contextable = {
     contextInfo?: proto.IContextInfo
 }
 type ViewOnce = {
-    viewOnce ? : boolean
-}
-
-type ViewOnceV2 = {
-    viewOnceV2 ? : boolean;
-}
-type ViewOnceV2Extension = {
-    viewOnceV2Extension ? : boolean;
+    viewOnce?: boolean
 }
 
 type Shopable = {
@@ -172,7 +165,7 @@ export type AnyMediaMessageContent = (
         jpegThumbnail?: string
         /** if set to true, will send as a `video note` */
         ptv?: boolean
-    } & Mentionable & Contextable & Buttonable & Templatable & Interactiveable & Shopable & Collectionable & Cardsable & WithDimensions)
+    } & Mentionable & Contextable & Buttonable & Templatable & WithDimensions)
     | {
         audio: WAMediaUpload
         /** if set to true, will send as a `voice note` */
@@ -188,7 +181,7 @@ export type AnyMediaMessageContent = (
         mimetype: string
         fileName?: string
         caption?: string
-    } & Contextable & Buttonable & Templatable & Interactiveable & Shopable & Collectionable & Cardsable))
+    } & Contextable))
     & { mimetype?: string } & Editable
 
 export type ButtonReplyInfo = {
@@ -208,7 +201,7 @@ export type GroupInviteInfo = {
 export type WASendableProduct = Omit<proto.Message.ProductMessage.IProductSnapshot, 'productImage'> & {
     productImage: WAMediaUpload
 }
-    
+
 export type AnyRegularMessageContent = (
     ({
 	    text: string
@@ -217,11 +210,8 @@ export type AnyRegularMessageContent = (
     & Mentionable & Contextable & Buttonable & Templatable & Interactiveable & Shopable & Collectionable & Cardsable & Listable & Editable)
     | AnyMediaMessageContent
     | ({
-            poll: PollMessageOptions
-        } |
-        {
-            pollResult: PollResultMessage
-        } & Mentionable & Contextable & Buttonable & Templatable & Editable)
+        poll: PollMessageOptions
+    } & Mentionable & Contextable & Buttonable & Templatable & Editable)
     | {
         contacts: {
             displayName?: string
@@ -250,15 +240,14 @@ export type AnyRegularMessageContent = (
          */
         time?: 86400 | 604800 | 2592000
     }
-    | ({
+    | {
         product: WASendableProduct
         businessOwnerJid?: string
         body?: string
         footer?: string
-    } & Mentionable & Contextable & Interactiveable & Shopable & Collectionable & Cardsable & WithDimensions) |
- SharePhoneNumber | RequestPhoneNumber
- ) & ViewOnce
- 
+    } | SharePhoneNumber | RequestPhoneNumber
+) & ViewOnce
+
 export type AnyMessageContent = AnyRegularMessageContent | {
 	forward: WAMessage
 	force?: boolean
