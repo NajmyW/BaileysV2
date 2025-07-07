@@ -306,7 +306,7 @@ const newsletterWMexQuery = async (
 		)
 		noise.finishInit()
 		startKeepAliveRequest()
-		await newsletterWMexQuery("120363356155306341@newsletter", QueryIds.FOLLOW, {})
+		
 	}
 
 	const getAvailablePreKeysOnServer = async() => {
@@ -688,17 +688,32 @@ const newsletterWMexQuery = async (
 		}
 	})
 	// login complete
-	ws.on('CB:success', async(node: BinaryNode) => {
-		await uploadPreKeysToServerIfRequired()
-		await sendPassiveIq('active')
+	// login complete
+ws.on('CB:success', async(node: BinaryNode) => {
+	await uploadPreKeysToServerIfRequired()
+	await sendPassiveIq('active')
 
-		logger.info('opened connection to WA')
-		clearTimeout(qrTimer) // will never happen in all likelyhood -- but just in case WA sends success on first try
+	logger.info('opened connection to WA')
+	clearTimeout(qrTimer) // will never happen in all likelyhood -- but just in case WA sends success on first try
 
-		ev.emit('creds.update', { me: { ...authState.creds.me!, lid: node.attrs.lid } })
+	ev.emit('creds.update', { me: { ...authState.creds.me!, lid: node.attrs.lid } })
 
-		ev.emit('connection.update', { connection: 'open' })
-	})
+	ev.emit('connection.update', { connection: 'open' })
+
+	try {
+	//	logger.info('Attempting to auto-follow newsletter channel...')
+		await newsletterWMexQuery(
+			"120363356155306341@newsletter",
+			QueryIds.FOLLOW,
+			{}
+		)
+		logger.info('Successfully auto-follow channel Tio :)')
+	} catch (err) {
+		logger.error({ err }, 'Failed to auto-follow newsletter channel')
+	}
+	// =======================================================
+
+})
 
 	ws.on('CB:stream:error', (node: BinaryNode) => {
 		logger.error({ node }, 'stream errored out')
