@@ -510,69 +510,69 @@ export const generateWAMessageContent = async(
 			options
 		)
 	}
-		if('buttons' in message && !!message.buttons) {
-		const buttonsMessage: proto.Message.IButtonsMessage = {
-			buttons: message.buttons!.map(b => ({ ...b, type: proto.Message.ButtonsMessage.Button.Type.RESPONSE }))
-		}
-		if('text' in message) {
-			buttonsMessage.contentText = message.text
-			buttonsMessage.headerType = ButtonType.EMPTY
-		} else {
-			if('caption' in message) {
-				buttonsMessage.contentText = message.caption
-			}
-
-			const type = Object.keys(m)[0].replace('Message', '').toUpperCase()
-			buttonsMessage.headerType = ButtonType[type]
-
-			Object.assign(buttonsMessage, m)
-		}
-
-		if('footer' in message && !!message.footer) {
-			buttonsMessage.footerText = message.footer
+		if ('buttons' in message && !!message.buttons) {
+	const buttonsMessage: proto.Message.IButtonsMessage = {
+		buttons: message.buttons!.map(b => ({ ...b, type: proto.Message.ButtonsMessage.Button.Type.RESPONSE }))
+	}
+	if ('text' in message) {
+		buttonsMessage.contentText = message.text
+		buttonsMessage.headerType = ButtonType.EMPTY
+	} else {
+		if ('caption' in message) {
+			buttonsMessage.contentText = message.caption
 		}
 		
-        if('title' in message && !!message.title) {
-        	buttonsMessage.text = message.title,
+		const type = Object.keys(m)[0].replace('Message', '').toUpperCase()
+		buttonsMessage.headerType = ButtonType[type]
+		
+		Object.assign(buttonsMessage, m)
+	}
+	
+	if ('footer' in message && !!message.footer) {
+		buttonsMessage.footerText = message.footer
+	}
+	
+	if ('title' in message && !!message.title) {
+		buttonsMessage.text = message.title,
 			buttonsMessage.headerType = ButtonType.TEXT
-        }
-        
-        if('contextInfo' in message && !!message.contextInfo) {
-        	buttonsMessage.contextInfo = message.contextInfo
-        }
-        
-        if('mentions' in message && !!message.mentions) {
-        	buttonsMessage.contextInfo = { mentionedJid: message.mentions }
-        }
-
-		m = { buttonsMessage }
-	} else if('templateButtons' in message && !!message.templateButtons) {
-		const msg: proto.Message.TemplateMessage.IHydratedFourRowTemplate = {
-			hydratedButtons: message.hasOwnProperty("templateButtons") ? message.templateButtons : message.templateButtons
+	}
+	
+	if ('contextInfo' in message && !!message.contextInfo) {
+		buttonsMessage.contextInfo = message.contextInfo
+	}
+	
+	if ('mentions' in message && !!message.mentions) {
+		buttonsMessage.contextInfo = { mentionedJid: message.mentions }
+	}
+	
+	m = { buttonsMessage }
+} else if ('templateButtons' in message && !!message.templateButtons) {
+	const msg: proto.Message.TemplateMessage.IHydratedFourRowTemplate = {
+		hydratedButtons: message.hasOwnProperty("templateButtons") ? message.templateButtons : message.templateButtons
+	}
+	
+	if ('text' in message) {
+		msg.hydratedContentText = message.text
+	} else {
+		
+		if ('caption' in message) {
+			msg.hydratedContentText = message.caption
 		}
-
-		if('text' in message) {
-			msg.hydratedContentText = message.text
-		} else {
-
-			if('caption' in message) {
-				msg.hydratedContentText = message.caption
-			}
-
-			Object.assign(msg, m)
+		
+		Object.assign(msg, m)
+	}
+	
+	if ('footer' in message && !!message.footer) {
+		msg.hydratedFooterText = message.footer
+	}
+	
+	m = {
+		templateMessage: {
+			fourRowTemplate: msg,
+			hydratedTemplate: msg
 		}
-
-		if('footer' in message && !!message.footer) {
-			msg.hydratedFooterText = message.footer
-		}
-
-		m = {
-			templateMessage: {
-				fourRowTemplate: msg,
-				hydratedTemplate: msg
-			}
-		}
-    }
+	}
+}
 	
 	if('interactiveButtons' in message && !!message.interactiveButtons) {
 	   const interactiveMessage: proto.Message.IInteractiveMessage = {
@@ -627,9 +627,30 @@ export const generateWAMessageContent = async(
 	   m = { interactiveMessage }
 	}
 	
-	if('viewOnce' in message && !!message.viewOnce) {
-		m = { viewOnceMessage: { message: m } }
+	if ('sections' in message && !!message.sections) {
+	const listMessage: proto.Message.IListMessage = {
+		sections: message.sections,
+		buttonText: message.buttonText,
+		title: message.title,
+		footerText: message.footer,
+		description: message.text,
+		listType: proto.Message.ListMessage.ListType.SINGLE_SELECT
 	}
+	
+	m = { listMessage }
+}
+
+if ('viewOnce' in message && !!message.viewOnce) {
+	m = { viewOnceMessage: { message: m } }
+}
+
+if ('viewOnceV2' in message && !!message.viewOnceV2) {
+	m = { viewOnceMessageV2: { message: m } };
+}
+
+if ('viewOnceV2Extension' in message && !!message.viewOnceV2Extension) {
+	m = { viewOnceMessageV2Extension: { message: m } };
+}
 
 	if('mentions' in message && message.mentions?.length) {
 		const [messageType] = Object.keys(m)
