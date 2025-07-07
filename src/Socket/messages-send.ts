@@ -595,6 +595,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					logger.debug({ jid }, 'adding device identity')
 				}
 				
+				/*
 				const messages = normalizeMessageContent(message);
 
 if (messages) {
@@ -617,7 +618,7 @@ if (messages) {
         }
     }
 }
-				/*
+				
 				const buttonType = getButtonType(message)
 				if(buttonType) {
 					(stanza.content as BinaryNode[]).push({
