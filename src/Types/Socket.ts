@@ -108,9 +108,8 @@ export type SocketConfig = {
      * */
     patchMessageBeforeSending: (
         msg: proto.IMessage,
-        recipientJids?: string[],
-    ) => Promise<PatchedMessageWithRecipientJID[] | PatchedMessageWithRecipientJID> | PatchedMessageWithRecipientJID[] | PatchedMessageWithRecipientJID
-
+        recipientJids: string[],
+      ) => Promise < proto.IMessage > | proto.IMessage
     /** verify app state MACs */
     appStateMacVerification: {
         patch: boolean
