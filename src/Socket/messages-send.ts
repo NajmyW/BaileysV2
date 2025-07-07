@@ -331,7 +331,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		const meId = authState.creds.me!.id
 
 		let shouldIncludeDeviceIdentity = false
-
+		let didPushAdditional = false
+		
 		const { user, server } = jidDecode(jid)!
 		const statusJid = 'status@broadcast'
 		const isGroup = server === 'g.us'
@@ -594,6 +595,26 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					logger.debug({ jid }, 'adding device identity')
 				}
 				
+				const messages = normalizeMessageContent(message);
+				const buttonType = getButtonType(messages);
+				
+				if (!isNewsletter && buttonType) {
+				    // Memastikan stanza.content adalah sebuah array
+				    if (!stanza.content || !Array.isArray(stanza.content)) {
+				        stanza.content = [];
+				    }
+				
+				    const buttonsNode = getButtonArgs(messages);
+				    const filteredButtons = getBinaryFilteredButtons(additionalNodes || []);
+				
+				    // Logika if/else tetap sama, hanya dengan tipe yang lebih jelas
+				    if (filteredButtons && additionalNodes) {
+				        (stanza.content as BinaryNode[]).push(...additionalNodes);
+				        didPushAdditional = true;
+				    } else {
+				        (stanza.content as BinaryNode[]).push(buttonsNode);
+				    }
+				}
 				/*
 				const buttonType = getButtonType(message)
 				if(buttonType) {
@@ -804,6 +825,15 @@ const filterNativeNode = (nodeContent) => {
 	return 'text'
 }
 	}
+	
+	const getBinaryFilteredButtons = (nodeContent) => {
+if (!Array.isArray(nodeContent)) return false
+return nodeContent.some(a =>
+['native_flow'].includes(a?.content?.[0]?.content?.[0]?.tag) ||
+['interactive', 'buttons', 'list'].includes(a?.content?.[0]?.tag) ||
+['hsm', 'biz'].includes(a?.tag)
+)
+}
 
 	const getMediaType = (message: proto.IMessage) => {
 		if(message.imageMessage) {
