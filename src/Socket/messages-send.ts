@@ -1049,7 +1049,7 @@ const filterNativeNode = (nodeContent) => {
 			content: AnyMessageContent,
 			options: MiscMessageGenerationOptions = { }
 		) => {
-			if(isJidNewsLetter(jid) && options.quoted) {
+			if(isJidNewsletter(jid) && options.quoted) {
                 logger.debug({ jid }, 'is a newsletter, removing quoted info from message')
               	  delete options.quoted
             }
