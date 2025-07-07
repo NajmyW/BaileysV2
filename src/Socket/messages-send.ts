@@ -789,7 +789,7 @@ const filterNativeNode = (nodeContent) => {
 		sendStatusMentions: async(
 		   content: AnyMessageContent, 
 		   jids: string[] = []
-		) => { 
+		) => {
 		   const userJid = jidNormalizedUser(authState.creds.me!.id) 		       
            let allUsers: string[] = [];
 
@@ -838,7 +838,6 @@ const filterNativeNode = (nodeContent) => {
 				   ),
 				   upload: async(readStream: Readable, opts: WAMediaUploadFunction) => {
 						const up = await waUploadToServer(readStream, { ...opts })
-					    mediaHandle = up.handle
 					    return up
 			       },
 				   mediaCache: config.mediaCache,
