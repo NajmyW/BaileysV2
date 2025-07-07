@@ -704,7 +704,7 @@ if (messages) {
 }
 }
 
-const getButtonArgs = (message: proto.IMessage): BinaryNode => {
+const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
   const nativeFlow = message.interactiveMessage?.nativeFlowMessage;
   const firstButtonName = nativeFlow && nativeFlow.buttons && nativeFlow.buttons[0] ? nativeFlow.buttons[0].name : undefined;
 
