@@ -671,7 +671,7 @@ if (messages) {
 						content: [
 							{
 								tag: 'list',
-								attrs: getButtonArgs(message),
+								attrs: getButtonArgs(message).attrs,
 							}
 						]
 					});
@@ -704,7 +704,7 @@ if (messages) {
 }
 }
 
-const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
+const getButtonArgs = (message: proto.IMessage): BinaryNode => {
   const nativeFlow = message.interactiveMessage?.nativeFlowMessage;
   const firstButtonName = nativeFlow && nativeFlow.buttons && nativeFlow.buttons[0] ? nativeFlow.buttons[0].name : undefined;
 
@@ -724,7 +724,7 @@ const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
       attrs: {
         native_flow_name: firstButtonName,
       },
-    }.attrs;
+    };
   } else if (firstButtonName && nativeFlowSpecials.includes(firstButtonName)
 ) {
     return {
@@ -748,7 +748,7 @@ const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
           ],
         },
       ],
-    }.attrs;
+    };
   } else if (message.buttonsMessage || nativeFlow) {
     return {
       tag: 'biz',
@@ -771,7 +771,7 @@ const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
           ],
         },
       ],
-    }.attrs;
+    };
   } else if (message.listMessage) {
     return {
       tag: 'biz',
@@ -785,12 +785,12 @@ const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
           },
         },
       ],
-    }.attrs;
+    };
   } else {
     return {
       tag: 'biz',
       attrs: {},
-    }.attrs;
+    };
   }
 };
 
