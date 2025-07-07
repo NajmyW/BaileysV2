@@ -6,10 +6,11 @@ import { DEFAULT_CACHE_TTLS, WA_DEFAULT_EPHEMERAL } from '../Defaults'
 import { AnyMessageContent, MediaConnInfo, MessageReceiptType, MessageRelayOptions, MiscMessageGenerationOptions, SocketConfig, WAMessageKey } from '../Types'
 import { aggregateMessageKeysNotFromMe, assertMediaContent, bindWaitForEvent, decryptMediaRetryData, encodeSignedDeviceIdentity, encodeWAMessage, encryptMediaRetryRequest, extractDeviceJids, generateMessageIDV2, generateWAMessage, getStatusCodeForMediaRetry, getUrlFromDirectPath, getWAUploadToServer, normalizeMessageContent, parseAndInjectE2ESessions, getContentType, unixTimestampSeconds } from '../Utils'
 import { getUrlInfo } from '../Utils/link-preview'
-import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET } from '../WABinary'
+import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET, STORIES_JID } from '../WABinary'
 import { USyncQuery, USyncUser } from '../WAUSync'
 import { makeGroupsSocket } from './groups'
 import ListType = proto.Message.ListMessage.ListType;
+import { Readable } from 'stream'
 
 export const makeMessagesSocket = (config: SocketConfig) => {
 	const {
@@ -680,7 +681,7 @@ const filterNativeNode = (nodeContent) => {
             return nodeContent;
         }
     };
-	const getMessageType = (message: proto.IMessage) => {
+	const getMessageType = (msg: proto.IMessage) => {
 		if (msg.viewOnceMessage) {
 	return getMessageType(msg.viewOnceMessage.message!)
 } else if (msg.viewOnceMessageV2) {
