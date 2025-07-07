@@ -265,7 +265,8 @@ type MinimalRelayOptions = {
     messageId?: string
     /** should we use group metadata cache, or fetch afresh from the server; default assumed to be "true" */
     useCachedGroupMetadata?: boolean
-    cachedGroupMetadata?: (jid: string) => Promise<GroupMetadataParticipants | undefined>
+    // di dalam type MinimalRelayOptions
+    cachedGroupMetadata ? : (jid: string) => Promise < GroupMetadata | undefined >
 }
 
 export type MessageRelayOptions = MinimalRelayOptions & {
