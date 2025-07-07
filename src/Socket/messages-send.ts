@@ -344,7 +344,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		useCachedGroupMetadata = useCachedGroupMetadata !== false && !isStatus
 
 		const participants: BinaryNode[] = []
-		const destinationJid = (!isStatus) ? jidEncode(user, isLid ? 'lid' : isGroup ? 'g.us' : 's.whatsapp.net') : statusJid
+		const destinationJid = (!isStatus) ? jidEncode(user, isLid ? 'lid' : isGroup ? 'g.us' : isNewsletter ? 'newsletter' : 's.whatsapp.net') : statusJid
 		const binaryNodeContent: BinaryNode[] = []
 		const devices: JidWithDevice[] = []
 
@@ -419,7 +419,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 						devices.push(...additionalDevices)
 					}
 
-					const patched = await patchMessageBeforeSending(message)
+					const patched = await patchMessageBeforeSending(message, devices.map(d => jidEncode(d.user, isLid ? 'lid' : isGroup ? 'g.us' : isNewsletter ? 'newsletter' : 's.whatsapp.net', d.device)))
 
 					if(Array.isArray(patched)) {
 					  throw new Boom('Per-jid patching is not supported in groups')
@@ -473,7 +473,28 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					})
 
 					await authState.keys.set({ 'sender-key-memory': { [jid]: senderKeyMap } })
-				} else {
+				} else if (isNewsletter) {
+	// Message edit
+	if (message.protocolMessage?.editedMessage) {
+		msgId = message.protocolMessage.key?.id!
+			message = message.protocolMessage.editedMessage
+	}
+	
+	// Message delete
+	if (message.protocolMessage?.type === proto.Message.ProtocolMessage.Type.REVOKE) {
+		msgId = message.protocolMessage.key?.id!
+			message = {}
+	}
+	
+	const patched = await patchMessageBeforeSending(message, [])
+	const bytes = proto.Message.encode(patched).finish()
+	
+	binaryNodeContent.push({
+		tag: 'plaintext',
+		attrs: mediaType ? { mediatype: mediaType } : {},
+		content: bytes
+	})
+} else {
 					const { user: meUser } = jidDecode(meId)!
 
 					if(!participant) {
