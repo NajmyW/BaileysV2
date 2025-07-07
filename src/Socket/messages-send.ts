@@ -3,7 +3,7 @@ import NodeCache from '@cacheable/node-cache'
 import { Boom } from '@hapi/boom'
 import { proto } from '../../WAProto'
 import { DEFAULT_CACHE_TTLS, WA_DEFAULT_EPHEMERAL } from '../Defaults'
-import { AnyMessageContent, MediaConnInfo, MessageReceiptType, MessageRelayOptions, MiscMessageGenerationOptions, WAMediaUploadFunctionOpts, SocketConfig, WAMessageKey } from '../Types'
+import { AnyMessageContent, MediaConnInfo, MessageReceiptType, MessageRelayOptions, MiscMessageGenerationOptions, SocketConfig, WAMessageKey } from '../Types'
 import { aggregateMessageKeysNotFromMe, assertMediaContent, bindWaitForEvent, decryptMediaRetryData, encodeSignedDeviceIdentity, encodeWAMessage, encryptMediaRetryRequest, extractDeviceJids, generateMessageIDV2, generateWAMessage, getStatusCodeForMediaRetry, getUrlFromDirectPath, getWAUploadToServer, normalizeMessageContent, parseAndInjectE2ESessions, getContentType, unixTimestampSeconds, delay } from '../Utils'
 import { getUrlInfo } from '../Utils/link-preview'
 import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET, STORIES_JID, isJidNewsletter } from '../WABinary'
@@ -917,7 +917,7 @@ const filterNativeNode = (nodeContent) => {
                  .toString(16)
                  .padStart(6, "0");
            }
-           let mediaHandle;
+           
            let msg = await generateWAMessage(
                STORIES_JID, 
                content, 
@@ -1049,6 +1049,10 @@ const filterNativeNode = (nodeContent) => {
 			content: AnyMessageContent,
 			options: MiscMessageGenerationOptions = { }
 		) => {
+			if(isJidNewsLetter(jid) && options.quoted) {
+                logger.debug({ jid }, 'is a newsletter, removing quoted info from message')
+              	  delete options.quoted
+            }
 			const userJid = authState.creds.me!.id
 			if(
 				typeof content === 'object' &&
@@ -1062,6 +1066,7 @@ const filterNativeNode = (nodeContent) => {
 					disappearingMessagesInChat
 				await groupToggleEphemeral(jid, value)
 			} else {
+				
 				const fullMsg = await generateWAMessage(
 					jid,
 					content,
@@ -1084,11 +1089,7 @@ const filterNativeNode = (nodeContent) => {
 						),
 						//TODO: CACHE
 						getProfilePicUrl: sock.profilePictureUrl,
-						upload: async (readStream: Readable, opts: WAMediaUploadFunctionOpts) => {
-							const up = await waUploadToServer(readStream, { ...opts, newsletter: isJidNewlLetter(jid) })
-							mediaHandle = up.handle
-							return up
-						},
+						upload: waUploadToServer,
 						mediaCache: config.mediaCache,
 						options: config.options,
 						messageId: generateMessageIDV2(sock.user?.id),
