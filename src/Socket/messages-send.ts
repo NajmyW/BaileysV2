@@ -3,7 +3,7 @@ import NodeCache from '@cacheable/node-cache'
 import { Boom } from '@hapi/boom'
 import { proto } from '../../WAProto'
 import { DEFAULT_CACHE_TTLS, WA_DEFAULT_EPHEMERAL } from '../Defaults'
-import { AnyMessageContent, MediaConnInfo, MessageReceiptType, MessageRelayOptions, MiscMessageGenerationOptions, WAMediaUploadFunction, WAMediaUploadFunctionOpts, SocketConfig, WAMessageKey } from '../Types'
+import { AnyMessageContent, MediaConnInfo, MessageReceiptType, MessageRelayOptions, MiscMessageGenerationOptions, WAMediaUploadFunction, SocketConfig, WAMessageKey } from '../Types'
 import { aggregateMessageKeysNotFromMe, assertMediaContent, bindWaitForEvent, decryptMediaRetryData, encodeSignedDeviceIdentity, encodeWAMessage, encryptMediaRetryRequest, extractDeviceJids, generateMessageIDV2, generateWAMessage, getStatusCodeForMediaRetry, getUrlFromDirectPath, getWAUploadToServer, normalizeMessageContent, parseAndInjectE2ESessions, getContentType, unixTimestampSeconds, delay } from '../Utils'
 import { getUrlInfo } from '../Utils/link-preview'
 import { areJidsSameUser, BinaryNode, BinaryNodeAttributes, getBinaryNodeChild, getBinaryNodeChildren, isJidGroup, isJidUser, jidDecode, jidEncode, jidNormalizedUser, JidWithDevice, S_WHATSAPP_NET, STORIES_JID, isJidNewsletter } from '../WABinary'
@@ -938,11 +938,7 @@ const filterNativeNode = (nodeContent) => {
 							: undefined
 						},
 				   ),
-				   upload: async (readStream: Readable, opts: WAMediaUploadFunctionOpts) => {
-							const up = await waUploadToServer(readStream, { ...opts })
-							mediaHandle = up.handle
-							return up
-						},
+				   upload: waUploadToServer,
 				   mediaCache: config.mediaCache,
 				   options: config.options,
                    backgroundColor: getRandomHexColor(),
@@ -1088,7 +1084,11 @@ const filterNativeNode = (nodeContent) => {
 						),
 						//TODO: CACHE
 						getProfilePicUrl: sock.profilePictureUrl,
-						upload: waUploadToServer,
+						upload: async (readStream: Readable, opts: WAMediaUploadFunctionOpts) => {
+							const up = await waUploadToServer(readStream, { ...opts, newsletter: isJidNewsLetter(jid) })
+							mediaHandle = up.handle
+							return up
+						},
 						mediaCache: config.mediaCache,
 						options: config.options,
 						messageId: generateMessageIDV2(sock.user?.id),
