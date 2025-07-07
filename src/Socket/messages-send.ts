@@ -569,6 +569,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					logger.debug({ jid }, 'adding device identity')
 				}
 				
+				/*
 				const buttonType = getButtonType(message)
 				if(buttonType) {
 					(stanza.content as BinaryNode[]).push({
@@ -582,7 +583,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 						]
 					})
 				}
-				
+				*/
 				if(additionalNodes && additionalNodes.length > 0) {
 					(stanza.content as BinaryNode[]).push(...additionalNodes)
 				}
