@@ -657,7 +657,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
   const nativeFlow = message.interactiveMessage?.nativeFlowMessage;
-  const firstButtonName = nativeFlow?.buttons[0]?.name;
+  const firstButtonName = nativeFlow && nativeFlow.buttons && nativeFlow.buttons[0] ? nativeFlow.buttons[0].name : undefined;
+
 
   const nativeFlowSpecials = [
     'mpm',
