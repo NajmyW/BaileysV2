@@ -686,7 +686,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		return msgId
 	}
 
-	const getButtonType = (message: proto.IMessage) => {
+	const getButtonType = (message) => {
 	if (message.buttonsMessage) {
 		return 'buttons'
 	} else if (message.buttonsResponseMessage) {
