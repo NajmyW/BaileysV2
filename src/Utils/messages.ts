@@ -504,7 +504,13 @@ export const generateWAMessageContent = async(
 		}
 	} else if('requestPhoneNumber' in message) {
 		m.requestPhoneNumberMessage = {}
-	} else if ('buttons' in message) {
+	} else {
+		m = await prepareWAMessageMedia(
+			message,
+			options
+		)
+	}
+		if ('buttons' in message && message.buttons) {
 	const buttonsMessage: proto.Message.IButtonsMessage = {
 		buttons: message.buttons!.map(b => ({ ...b, type: proto.Message.ButtonsMessage.Button.Type.RESPONSE }))
 	}
@@ -522,20 +528,20 @@ export const generateWAMessageContent = async(
 		Object.assign(buttonsMessage, m)
 	}
 	
-	if ('footer' in message && !!message.footer) {
+	if ('footer' in message && message.footer) {
 		buttonsMessage.footerText = message.footer
 	}
 	
-	if ('title' in message && !!message.title) {
+	if ('title' in message && message.title) {
 		buttonsMessage.text = message.title,
 			buttonsMessage.headerType = ButtonType.TEXT
 	}
 	
-	if ('contextInfo' in message && !!message.contextInfo) {
+	if ('contextInfo' in message && message.contextInfo) {
 		buttonsMessage.contextInfo = message.contextInfo
 	}
 	
-	if ('mentions' in message && !!message.mentions) {
+	if ('mentions' in message && message.mentions) {
 		buttonsMessage.contextInfo = { mentionedJid: message.mentions }
 	}
 	
@@ -566,7 +572,9 @@ export const generateWAMessageContent = async(
 			hydratedTemplate: msg
 		}
 	}
-} else if('interactiveButtons' in message) {
+}
+	
+	if('interactiveButtons' in message && !!message.interactiveButtons) {
 	   const interactiveMessage: proto.Message.IInteractiveMessage = {
 	      nativeFlowMessage: WAProto.Message.InteractiveMessage.NativeFlowMessage.fromObject({ 
 	         buttons: message.interactiveButtons,
@@ -617,11 +625,6 @@ export const generateWAMessageContent = async(
        }
        
 	   m = { interactiveMessage }
-	} else {
-		m = await prepareWAMessageMedia(
-			message,
-			options
-		)
 	}
 	
 	if ('sections' in message && !!message.sections) {
