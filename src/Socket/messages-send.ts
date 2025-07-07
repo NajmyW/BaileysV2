@@ -596,25 +596,27 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 				}
 				
 				const messages = normalizeMessageContent(message);
-				const buttonType = getButtonType(messages);
-				
-				if (!isNewsletter && buttonType) {
-				    // Memastikan stanza.content adalah sebuah array
-				    if (!stanza.content || !Array.isArray(stanza.content)) {
-				        stanza.content = [];
-				    }
-				
-				    const buttonsNode = getButtonArgs(messages);
-				    const filteredButtons = getBinaryFilteredButtons(additionalNodes || []);
-				
-				    // Logika if/else tetap sama, hanya dengan tipe yang lebih jelas
-				    if (filteredButtons && additionalNodes) {
-				        (stanza.content as BinaryNode[]).push(...additionalNodes);
-				        didPushAdditional = true;
-				    } else {
-				        (stanza.content as BinaryNode[]).push(buttonsNode);
-				    }
-				}
+
+if (messages) {
+    const buttonType = getButtonType(messages);
+    
+    if (!isNewsletter && buttonType) {
+        if (!stanza.content || !Array.isArray(stanza.content)) {
+            stanza.content = [];
+        }
+
+        const buttonsNode = getButtonArgs(messages); 
+        
+        const filteredButtons = getBinaryFilteredButtons(additionalNodes || []);
+
+        if (filteredButtons && additionalNodes) {
+            (stanza.content as BinaryNode[]).push(...additionalNodes);
+            didPushAdditional = true;
+        } else {
+            (stanza.content as BinaryNode[]).push(buttonsNode);
+        }
+    }
+}
 				/*
 				const buttonType = getButtonType(message)
 				if(buttonType) {
@@ -686,7 +688,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		return msgId
 	}
 
-	const getButtonType = (message) => {
+	const getButtonType = (message: proto.IMessage) => {
 	if (message.buttonsMessage) {
 		return 'buttons'
 	} else if (message.buttonsResponseMessage) {
@@ -702,7 +704,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 }
 }
 
-const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
+const getButtonArgs = (message: proto.IMessage): BinaryNode => {
   const nativeFlow = message.interactiveMessage?.nativeFlowMessage;
   const firstButtonName = nativeFlow && nativeFlow.buttons && nativeFlow.buttons[0] ? nativeFlow.buttons[0].name : undefined;
 
@@ -722,7 +724,7 @@ const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
       attrs: {
         native_flow_name: firstButtonName,
       },
-    }.attrs;
+    };
   } else if (firstButtonName && nativeFlowSpecials.includes(firstButtonName)
 ) {
     return {
@@ -746,7 +748,7 @@ const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
           ],
         },
       ],
-    }.attrs;
+    };
   } else if (message.buttonsMessage || nativeFlow) {
     return {
       tag: 'biz',
@@ -769,7 +771,7 @@ const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
           ],
         },
       ],
-    }.attrs;
+    };
   } else if (message.listMessage) {
     return {
       tag: 'biz',
@@ -783,12 +785,12 @@ const getButtonArgs = (message: proto.IMessage): BinaryNode['attrs'] => {
           },
         },
       ],
-    }.attrs;
+    };
   } else {
     return {
       tag: 'biz',
       attrs: {},
-    }.attrs;
+    };
   }
 };
 
