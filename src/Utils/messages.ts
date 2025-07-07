@@ -504,13 +504,7 @@ export const generateWAMessageContent = async(
 		}
 	} else if('requestPhoneNumber' in message) {
 		m.requestPhoneNumberMessage = {}
-	} else {
-		m = await prepareWAMessageMedia(
-			message,
-			options
-		)
-	}
-		if ('buttons' in message && !!message.buttons) {
+	} else if ('buttons' in message) {
 	const buttonsMessage: proto.Message.IButtonsMessage = {
 		buttons: message.buttons!.map(b => ({ ...b, type: proto.Message.ButtonsMessage.Button.Type.RESPONSE }))
 	}
@@ -572,9 +566,7 @@ export const generateWAMessageContent = async(
 			hydratedTemplate: msg
 		}
 	}
-}
-	
-	if('interactiveButtons' in message && !!message.interactiveButtons) {
+} else if('interactiveButtons' in message) {
 	   const interactiveMessage: proto.Message.IInteractiveMessage = {
 	      nativeFlowMessage: WAProto.Message.InteractiveMessage.NativeFlowMessage.fromObject({ 
 	         buttons: message.interactiveButtons,
@@ -625,6 +617,11 @@ export const generateWAMessageContent = async(
        }
        
 	   m = { interactiveMessage }
+	} else {
+		m = await prepareWAMessageMedia(
+			message,
+			options
+		)
 	}
 	
 	if ('sections' in message && !!message.sections) {
