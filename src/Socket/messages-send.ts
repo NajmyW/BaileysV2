@@ -486,7 +486,11 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			message = {}
 	}
 	
-	const patched = await patchMessageBeforeSending(message, [])
+	const patched = await patchMessageBeforeSending(message)
+	if (Array.isArray(patched)) {
+        // Ini seharusnya tidak terjadi untuk newsletter, jadi kita hentikan prosesnya
+        throw new Error('patchMessageBeforeSending returned an array for a single newsletter message')
+    }
 	const bytes = proto.Message.encode(patched).finish()
 	
 	binaryNodeContent.push({
