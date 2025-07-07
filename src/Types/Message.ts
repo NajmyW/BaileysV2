@@ -153,37 +153,36 @@ type RequestPhoneNumber = {
 
 export type MediaType = keyof typeof MEDIA_HKDF_KEY_MAPPING
 export type AnyMediaMessageContent = (
-        ({
-            image: WAMediaUpload
-            caption ? : string
-            jpegThumbnail ? : string
-        } & Mentionable & Contextable & Buttonable & Templatable & Interactiveable & Shopable & Collectionable & Cardsable & WithDimensions) |
-        ({
-            video: WAMediaUpload
-            caption ? : string
-            gifPlayback ? : boolean
-            jpegThumbnail ? : string
-            /** if set to true, will send as a `video note` */
-            ptv ? : boolean
-        } & Mentionable & Contextable & Buttonable & Templatable & Interactiveable & Shopable & Collectionable & Cardsable & WithDimensions) |
-        {
-            audio: WAMediaUpload
-            /** if set to true, will send as a `voice note` */
-            ptt ? : boolean
-            /** optionally tell the duration of the audio */
-            seconds ? : number
-        } |
-        ({
-            sticker: WAMediaUpload
-            isAnimated ? : boolean
-        } & WithDimensions) |
-        ({
-            document: WAMediaUpload
-            mimetype: string
-            fileName ? : string
-            caption ? : string
-        } & Contextable & Buttonable & Templatable & Interactiveable & Shopable & Collectionable & Cardsable)) &
-    { mimetype ? : string } & Editable
+    ({
+        image: WAMediaUpload
+        caption?: string
+        jpegThumbnail?: string
+    } & Mentionable & Contextable & Buttonable & Templatable & Interactiveable & Shopable & Collectionable & Cardsable & WithDimensions)
+    | ({
+        video: WAMediaUpload
+        caption?: string
+        gifPlayback?: boolean
+        jpegThumbnail?: string
+        /** if set to true, will send as a `video note` */
+        ptv?: boolean
+    } & Mentionable & Contextable & Buttonable & Templatable & Interactiveable & Shopable & Collectionable & Cardsable & WithDimensions)
+    | {
+        audio: WAMediaUpload
+        /** if set to true, will send as a `voice note` */
+        ptt?: boolean
+        /** optionally tell the duration of the audio */
+        seconds?: number
+    }
+    | ({
+        sticker: WAMediaUpload
+        isAnimated?: boolean
+    } & WithDimensions) | ({
+        document: WAMediaUpload
+        mimetype: string
+        fileName?: string
+        caption?: string
+    } & Contextable & Buttonable & Templatable & Interactiveable & Shopable & Collectionable & Cardsable))
+    & { mimetype?: string } & Editable
 
 export type ButtonReplyInfo = {
     displayText: string
@@ -202,7 +201,7 @@ export type GroupInviteInfo = {
 export type WASendableProduct = Omit<proto.Message.ProductMessage.IProductSnapshot, 'productImage'> & {
     productImage: WAMediaUpload
 }
-
+    
 export type AnyRegularMessageContent = (
     ({
 	    text: string
@@ -211,11 +210,11 @@ export type AnyRegularMessageContent = (
     & Mentionable & Contextable & Buttonable & Templatable & Interactiveable & Shopable & Collectionable & Cardsable & Listable & Editable)
     | AnyMediaMessageContent
     | ({
-        poll: PollMessageOptions
-    }
-    | {
-        pollResult: PollResultMessage
-    } & Mentionable & Contextable & Buttonable & Templatable  & Editable)
+            poll: PollMessageOptions
+        } |
+        {
+            pollResult: PollResultMessage
+        } & Mentionable & Contextable & Buttonable & Templatable & Editable)
     | {
         contacts: {
             displayName?: string
@@ -225,17 +224,17 @@ export type AnyRegularMessageContent = (
     | {
         location: WALocationMessage
     }
-    | {
-        liveLocation: WALiveLocationMessage
-    }
     | { react: proto.Message.IReactionMessage }
     | {
         buttonReply: ButtonReplyInfo
-        type: 'template' | 'plain' | 'interactive'
+        type: 'template' | 'plain'
     }
     | {
-     groupInvite: GroupInviteInfo
-    }    
+        groupInvite: GroupInviteInfo
+    }
+    | {
+        listReply: Omit<proto.Message.IListResponseMessage, 'contextInfo'>
+    }
     | {
         pin: WAMessageKey
         type: proto.PinInChat.Type
@@ -244,44 +243,15 @@ export type AnyRegularMessageContent = (
          */
         time?: 86400 | 604800 | 2592000
     }
-    | {
-        keep: WAMessageKey
-        type: number
-        /**
-         * 24 hours, 7 days, 90 days
-         */
-        time?: 86400 | 604800 | 7776000
-    }
-    | {
-     paymentInvite: PaymentInviteInfo
-    }
-    | {
-     requestPayment: RequestPaymentInfo
-    }
-    | {
-     event: EventsInfo
-    }
-    | {
-     order: OrderInfo
-    }
-    | {
-     call: CallCreationInfo
-    } 
-    | {
-     inviteAdmin: AdminInviteInfo
-    }
-    | {
-        listReply: Omit<proto.Message.IListResponseMessage, 'contextInfo'>
-    }
     | ({
         product: WASendableProduct
         businessOwnerJid?: string
         body?: string
         footer?: string
-    } & Mentionable & Contextable & Interactiveable & Shopable & Collectionable & Cardsable & WithDimensions) 
-    | SharePhoneNumber | RequestPhoneNumber
-) & ViewOnce
-
+    } & Mentionable & Contextable & Interactiveable & Shopable & Collectionable & Cardsable & WithDimensions) |
+ SharePhoneNumber | RequestPhoneNumber
+ ) & ViewOnce
+ 
 export type AnyMessageContent = AnyRegularMessageContent | {
 	forward: WAMessage
 	force?: boolean
