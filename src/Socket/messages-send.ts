@@ -724,7 +724,7 @@ const getButtonArgs = (message: proto.IMessage): BinaryNode => {
       attrs: {
         native_flow_name: firstButtonName,
       },
-    };
+    }.attrs;
   } else if (firstButtonName && nativeFlowSpecials.includes(firstButtonName)
 ) {
     return {
@@ -748,7 +748,7 @@ const getButtonArgs = (message: proto.IMessage): BinaryNode => {
           ],
         },
       ],
-    };
+    }.attrs;
   } else if (message.buttonsMessage || nativeFlow) {
     return {
       tag: 'biz',
@@ -771,7 +771,7 @@ const getButtonArgs = (message: proto.IMessage): BinaryNode => {
           ],
         },
       ],
-    };
+    }.attrs;
   } else if (message.listMessage) {
     return {
       tag: 'biz',
@@ -785,12 +785,12 @@ const getButtonArgs = (message: proto.IMessage): BinaryNode => {
           },
         },
       ],
-    };
+    }.attrs;
   } else {
     return {
       tag: 'biz',
       attrs: {},
-    };
+    }.attrs;
   }
 };
 
