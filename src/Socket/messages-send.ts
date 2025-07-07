@@ -836,10 +836,7 @@ const filterNativeNode = (nodeContent) => {
 							: undefined
 						},
 				   ),
-				   upload: async(readStream: Readable, opts: MiscMessageGenerationOptions) => {
-						const up = await waUploadToServer(readStream, { ...opts })
-					    return up
-			       },
+				   upload: waUploadToServer,
 				   mediaCache: config.mediaCache,
 				   options: config.options,
                    backgroundColor: getRandomHexColor(),
