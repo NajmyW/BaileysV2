@@ -836,7 +836,7 @@ const filterNativeNode = (nodeContent) => {
 							: undefined
 						},
 				   ),
-				   upload: async(readStream: Readable, opts: WAMediaUploadFunction) => {
+				   upload: async(readStream: Readable, opts: MiscMessageGenerationOptions) => {
 						const up = await waUploadToServer(readStream, { ...opts })
 					    return up
 			       },
