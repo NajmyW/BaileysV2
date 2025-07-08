@@ -9,6 +9,7 @@ import { Label } from './Label'
 import { LabelAssociation } from './LabelAssociation'
 import { MessageUpsertType, MessageUserReceiptUpdate, WAMessage, WAMessageKey, WAMessageUpdate } from './Message'
 import { ConnectionState } from './State'
+import { NewsletterSettingsUpdate, NewsletterViewRole, SubscriberAction } from './Newsletter'
 
 export type BaileysEventMap = {
     /** connection state has been updated -- WS closed, opened, connecting etc. */
@@ -37,7 +38,11 @@ export type BaileysEventMap = {
 
     'contacts.upsert': Contact[]
     'contacts.update': Partial<Contact>[]
-
+    'newsletter.reaction': { id: string, server_id: string, reaction: {code?: string, count?: number, removed?: boolean}}
+    'newsletter.view': { id: string, server_id: string, count: number}
+    /**don't handles subscribe/unsubscribe actions */
+    'newsletter-participants.update': { id: string, author: string, user: string, new_role: NewsletterViewRole, action: SubscriberAction}
+    'newsletter-settings.update': { id: string, update: NewsletterSettingsUpdate}
     'messages.delete': { keys: WAMessageKey[] } | { jid: string, all: true }
     'messages.update': WAMessageUpdate[]
     'messages.media-update': { key: WAMessageKey, media?: { ciphertext: Uint8Array, iv: Uint8Array }, error?: Boom }[]
