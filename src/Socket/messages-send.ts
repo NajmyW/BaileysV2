@@ -476,9 +476,10 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					await authState.keys.set({ 'sender-key-memory': { [jid]: senderKeyMap } })
 				} else if (isNewsletter) {
 				const patched = await patchMessageBeforeSending(message, [])
-				if(!Array.isArray(patched)) {
-								  throw new Boom('Per-jid patching is not supported in newsletter')
-								}
+				if (Array.isArray(patched)) {
+	// Ini seharusnya tidak terjadi untuk newsletter, jadi kita hentikan prosesnya
+				throw new Error('patchMessageBeforeSending returned an array for a single newsletter message')
+			}
 				const bytes = encodeNewsletterMessage(patched)
 				
 				binaryNodeContent.push({
