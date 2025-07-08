@@ -141,6 +141,7 @@ export const encodeBase64EncodedStringForUpload = (b64: string) => (
 	)
 )
 
+
 export const generateProfilePicture = async(mediaUpload: WAMediaUpload) => {
 	let bufferOrFilePath: Buffer | string
 	if(Buffer.isBuffer(mediaUpload)) {
@@ -204,6 +205,57 @@ export async function getAudioDuration(buffer: Buffer | string | Readable) {
 	return metadata.format.duration
 }
 
+export const prepareStream = async(
+	media: WAMediaUpload,
+	mediaType: MediaType,
+	{ logger, saveOriginalFileIfRequired, opts }: EncryptedStreamOptions = {}
+) => {
+	const { stream, type } = await getStream(media, opts)
+
+	logger?.debug('fetched media stream')
+
+	let bodyPath: string | undefined
+	let didSaveToTmpPath = false
+	try {
+		const buffer = await toBuffer(stream)
+		if(type === 'file') {
+			bodyPath = (media as any).url
+		} else if(saveOriginalFileIfRequired) {
+			bodyPath = join(getTmpFilesDirectory(), mediaType + generateMessageID())
+			writeFileSync(bodyPath, buffer)
+			didSaveToTmpPath = true
+		}
+
+		const fileLength = buffer.length
+		const fileSha256 = Crypto.createHash('sha256').update(buffer).digest()
+
+		stream?.destroy()
+		logger?.debug('prepare stream data successfully')
+
+		return {
+			mediaKey: undefined,
+			encWriteStream: buffer,
+			fileLength,
+			fileSha256,
+			fileEncSha256: undefined,
+			bodyPath,
+			didSaveToTmpPath
+		}
+	} catch (error) {
+		// destroy all streams with error
+		stream.destroy()
+
+		if(didSaveToTmpPath) {
+			try {
+				await fs.unlink(bodyPath!)
+			} catch(err) {
+				logger?.error({ err }, 'failed to save to tmp path')
+			}
+		}
+
+		throw error
+	}
+}
 /**
   referenced from and modifying https://github.com/wppconnect-team/wa-js/blob/main/src/chat/functions/prepareAudioWaveform.ts
  */
