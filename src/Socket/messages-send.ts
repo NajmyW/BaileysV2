@@ -475,28 +475,12 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 
 					await authState.keys.set({ 'sender-key-memory': { [jid]: senderKeyMap } })
 				} else if (isNewsletter) {
-	// Message edit
-	if (message.protocolMessage?.editedMessage) {
-		msgId = message.protocolMessage.key?.id!
-			message = message.protocolMessage.editedMessage
-	}
-	
-	// Message delete
-	if (message.protocolMessage?.type === proto.Message.ProtocolMessage.Type.REVOKE) {
-		msgId = message.protocolMessage.key?.id!
-			message = {}
-	}
-	
-	const patched = await patchMessageBeforeSending(message)
-	if (Array.isArray(patched)) {
-        // Ini seharusnya tidak terjadi untuk newsletter, jadi kita hentikan prosesnya
-        throw new Error('patchMessageBeforeSending returned an array for a single newsletter message')
-    }
-	const bytes = proto.Message.encode(patched).finish()
+	const patched = await patchMessageBeforeSending(message, [])
+	const bytes = encodeNewsletterMessage(patched)
 	
 	binaryNodeContent.push({
 		tag: 'plaintext',
-		attrs: mediaType ? { mediatype: mediaType } : {},
+		attrs: {},
 		content: bytes
 	})
 } else {
@@ -1082,10 +1066,7 @@ return nodeContent.some(a =>
 			content: AnyMessageContent,
 			options: MiscMessageGenerationOptions = { }
 		) => {
-			if(isJidNewsletter(jid) && options.quoted) {
-                logger.debug({ jid }, 'is a newsletter, removing quoted info from message')
-              	  delete options.quoted
-            }
+			
 			const userJid = authState.creds.me!.id
 			if(
 				typeof content === 'object' &&
