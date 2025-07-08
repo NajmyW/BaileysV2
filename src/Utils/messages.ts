@@ -124,7 +124,7 @@ export const prepareWAMessageMedia = async(
 			!!uploadData.media.url &&
 			!!options.mediaCache && (
 	// generate the key
-		mediaType + ':' + uploadData.media.url.toString()
+		mediaType + ':' + uploadData.media.url!.toString()
 	)
 
 	if(mediaType === 'document' && !uploadData.fileName) {
@@ -158,12 +158,13 @@ export const prepareWAMessageMedia = async(
 	const requiresOriginalForSomeProcessing = requiresDurationComputation || requiresThumbnailComputation
 	const {
 		mediaKey,
-		encFilePath,
-		originalFilePath,
+		encWriteStream,
+		bodyPath,
 		fileEncSha256,
 		fileSha256,
-		fileLength
-	} = await encryptedStream(
+		fileLength,
+		didSaveToTmpPath,
+	} = await (options.newsletter ? prepareStream : encryptedStream)(
 		uploadData.media,
 		options.mediaTypeOverride || mediaType,
 		{
@@ -173,11 +174,11 @@ export const prepareWAMessageMedia = async(
 		}
 	)
 	 // url safe Base64 encode the SHA256 hash of the body
-	const fileEncSha256B64 = fileEncSha256.toString('base64')
-	const [{ mediaUrl, directPath }] = await Promise.all([
+	const fileEncSha256B64 = (options.newsletter ? fileSha256 : fileEncSha256 ?? fileSha256).toString('base64')
+	const [{ mediaUrl, directPath, handle }] = await Promise.all([
 		(async() => {
 			const result = await options.upload(
-				encFilePath,
+				encWriteStream,
 				{ fileEncSha256B64, mediaType, timeoutMs: options.mediaUploadTimeoutMs }
 			)
 			logger?.debug({ mediaType, cacheableKey }, 'uploaded media')
@@ -189,7 +190,7 @@ export const prepareWAMessageMedia = async(
 					const {
 						thumbnail,
 						originalImageDimensions
-					} = await generateThumbnail(originalFilePath!, mediaType as 'image' | 'video', options)
+					} = await generateThumbnail(bodyPath!, mediaType as 'image' | 'video', options)
 					uploadData.jpegThumbnail = thumbnail
 					if(!uploadData.width && originalImageDimensions) {
 						uploadData.width = originalImageDimensions.width
@@ -201,12 +202,17 @@ export const prepareWAMessageMedia = async(
 				}
 
 				if(requiresDurationComputation) {
-					uploadData.seconds = await getAudioDuration(originalFilePath!)
+					uploadData.seconds = await getAudioDuration(bodyPath!)
 					logger?.debug('computed audio duration')
 				}
 
 				if(requiresWaveformProcessing) {
-					uploadData.waveform = await getAudioWaveform(originalFilePath!, logger)
+					uploadData.waveform = await getAudioWaveform(bodyPath!, logger)
+					logger?.debug('processed waveform')
+				}
+
+				if(requiresWaveformProcessing) {
+					uploadData.waveform = await getAudioWaveform(bodyPath!, logger)
 					logger?.debug('processed waveform')
 				}
 
@@ -221,15 +227,14 @@ export const prepareWAMessageMedia = async(
 	])
 		.finally(
 			async() => {
-				try {
-					await fs.unlink(encFilePath)
-					if(originalFilePath) {
-						await fs.unlink(originalFilePath)
-					}
+				if (!Buffer.isBuffer(encWriteStream)) {
+					encWriteStream.destroy()
+				}
 
+				// remove tmp files
+				if(didSaveToTmpPath && bodyPath) {
+					await fs.unlink(bodyPath)
 					logger?.debug('removed tmp files')
-				} catch(error) {
-					logger?.warn('failed to remove tmp file')
 				}
 			}
 		)
@@ -237,13 +242,13 @@ export const prepareWAMessageMedia = async(
 	const obj = WAProto.Message.fromObject({
 		[`${mediaType}Message`]: MessageTypeProto[mediaType].fromObject(
 			{
-				url: mediaUrl,
+				url:  handle ? undefined : mediaUrl,
 				directPath,
-				mediaKey,
-				fileEncSha256,
+				mediaKey: mediaKey,
+				fileEncSha256: fileEncSha256,
 				fileSha256,
 				fileLength,
-				mediaKeyTimestamp: unixTimestampSeconds(),
+				mediaKeyTimestamp: handle ? undefined : unixTimestampSeconds(),
 				...uploadData,
 				media: undefined
 			}
@@ -262,6 +267,7 @@ export const prepareWAMessageMedia = async(
 
 	return obj
 }
+
 
 export const prepareDisappearingMessageSettingContent = (ephemeralExpiration?: number) => {
 	ephemeralExpiration = ephemeralExpiration || 0
@@ -685,51 +691,61 @@ export const generateWAMessageFromContent = (
 ) => {
 	// set timestamp to now
 	// if not specified
-	if(!options.timestamp) {
+	if (!options.timestamp) {
 		options.timestamp = new Date()
 	}
-
-	const innerMessage = normalizeMessageContent(message)!
-	const key: string = getContentType(innerMessage)!
-	const timestamp = unixTimestampSeconds(options.timestamp)
+	
+	const innerMessage = normalizeMessageContent(message) !
+		const key: string = getContentType(innerMessage) !
+			const timestamp = unixTimestampSeconds(options.timestamp)
 	const { quoted, userJid } = options
-
-	if(quoted && !isJidNewsletter(jid)) {
+	
+	if (quoted && !isJidNewsLetter(jid)) {
 		const participant = quoted.key.fromMe ? userJid : (quoted.participant || quoted.key.participant || quoted.key.remoteJid)
-
-		let quotedMsg = normalizeMessageContent(quoted.message)!
-		const msgType = getContentType(quotedMsg)!
-		// strip any redundant properties
-		quotedMsg = proto.Message.fromObject({ [msgType]: quotedMsg[msgType] })
-
+		
+		let quotedMsg = normalizeMessageContent(quoted.message) !
+			const msgType = getContentType(quotedMsg) !
+				// strip any redundant properties
+				quotedMsg = proto.Message.fromObject({
+					[msgType]: quotedMsg[msgType] })
+		
 		const quotedContent = quotedMsg[msgType]
-		if(typeof quotedContent === 'object' && quotedContent && 'contextInfo' in quotedContent) {
+		if (typeof quotedContent === 'object' && quotedContent && 'contextInfo' in quotedContent) {
 			delete quotedContent.contextInfo
 		}
-
-		const contextInfo: proto.IContextInfo = innerMessage[key].contextInfo || { }
+		
+		let requestPayment;
+		if (key === 'requestPaymentMessage') {
+			if (innerMessage?.requestPaymentMessage?.noteMessage && innerMessage?.requestPaymentMessage?.noteMessage?.extendedTextMessage) {
+				requestPayment = innerMessage?.requestPaymentMessage?.noteMessage?.extendedTextMessage
+			} else if (innerMessage?.requestPaymentMessage?.noteMessage && innerMessage?.requestPaymentMessage?.noteMessage?.stickerMessage) {
+				requestPayment = innerMessage.requestPaymentMessage?.noteMessage?.stickerMessage
+			}
+		}
+		
+		const contextInfo: proto.IContextInfo = (key === 'requestPaymentMessage' ? requestPayment.contextInfo : innerMessage[key].contextInfo) || {}
 		contextInfo.participant = jidNormalizedUser(participant!)
 		contextInfo.stanzaId = quoted.key.id
 		contextInfo.quotedMessage = quotedMsg
-
+		
 		// if a participant is quoted, then it must be a group
 		// hence, remoteJid of group must also be entered
-		if(jid !== quoted.key.remoteJid) {
+		if (jid !== quoted.key.remoteJid) {
 			contextInfo.remoteJid = quoted.key.remoteJid
 		}
-
+		
 		innerMessage[key].contextInfo = contextInfo
 	}
-
-	if(
+	
+	if (
 		// if we want to send a disappearing message
 		!!options?.ephemeralExpiration &&
 		// and it's not a protocol message -- delete, toggle disappear message
 		key !== 'protocolMessage' &&
 		// already not converted to disappearing message
 		key !== 'ephemeralMessage' &&
-	// newsletter not accept disappearing messages
-	!isJidNewsletter(jid)
+		// newsletter not accept disappearing messages
+		!isJidNewsLetter(jid)
 	) {
 		innerMessage[key].contextInfo = {
 			...(innerMessage[key].contextInfo || {}),
@@ -737,14 +753,14 @@ export const generateWAMessageFromContent = (
 			//ephemeralSettingTimestamp: options.ephemeralOptions.eph_setting_ts?.toString()
 		}
 	}
-
+	
 	message = WAProto.Message.fromObject(message)
-
+	
 	const messageJSON = {
 		key: {
 			remoteJid: jid,
 			fromMe: true,
-			id: options?.messageId || generateMessageIDV2(),
+			id: options?.messageId || generateMessageID(),
 		},
 		message: message,
 		messageTimestamp: timestamp,
@@ -755,7 +771,7 @@ export const generateWAMessageFromContent = (
 	return WAProto.WebMessageInfo.fromObject(messageJSON)
 }
 
-export const generateWAMessage = async(
+export const generateWAMessage = async (
 	jid: string,
 	content: AnyMessageContent,
 	options: MessageGenerationOptions,
@@ -765,8 +781,7 @@ export const generateWAMessage = async(
 	return generateWAMessageFromContent(
 		jid,
 		await generateWAMessageContent(
-			content,
-			options
+			content, { newsletter: isJidNewsletter(jid!), ...options }
 		),
 		options
 	)

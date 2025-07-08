@@ -942,7 +942,7 @@ return nodeContent.some(a =>
                  .toString(16)
                  .padStart(6, "0");
            }
-           
+           let mediaHandle 
            let msg = await generateWAMessage(
                STORIES_JID, 
                content, 
@@ -963,7 +963,11 @@ return nodeContent.some(a =>
 							: undefined
 						},
 				   ),
-				   upload: waUploadToServer,
+				   upload: async (readStream: Readable, opts: WAMediaUploadFunctionOpts) => {
+					const up = await waUploadToServer(readStream, { ...opts })
+					mediaHandle = up.handle
+					return up
+				},
 				   mediaCache: config.mediaCache,
 				   options: config.options,
                    backgroundColor: getRandomHexColor(),
@@ -1074,7 +1078,7 @@ return nodeContent.some(a =>
 			content: AnyMessageContent,
 			options: MiscMessageGenerationOptions = { }
 		) => {
-			
+			let mediaHandle
 			const userJid = authState.creds.me!.id
 			if(
 				typeof content === 'object' &&
@@ -1111,7 +1115,11 @@ return nodeContent.some(a =>
 						),
 						//TODO: CACHE
 						getProfilePicUrl: sock.profilePictureUrl,
-						upload: waUploadToServer,
+						upload: async (readStream: Readable, opts: WAMediaUploadFunctionOpts) => {
+						const up = await waUploadToServer(readStream, { ...opts })
+						mediaHandle = up.handle
+						return up
+					},
 						mediaCache: config.mediaCache,
 						options: config.options,
 						messageId: generateMessageIDV2(sock.user?.id),
