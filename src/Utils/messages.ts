@@ -25,7 +25,7 @@ import {
 } from '../Types'
 import { isJidGroup, isJidStatusBroadcast, isJidNewsletter, jidNormalizedUser } from '../WABinary'
 import { sha256 } from './crypto'
-import { generateMessageIDV2, getKeyAuthor, unixTimestampSeconds } from './generics'
+import { generateMessageID, getKeyAuthor, unixTimestampSeconds } from './generics'
 import { ILogger } from './logger'
 import { downloadContentFromMessage, encryptedStream, generateThumbnail, getAudioDuration, getAudioWaveform, MediaDownloadOptions } from './messages-media'
 const ButtonType = proto.Message.ButtonsMessage.HeaderType
@@ -700,7 +700,7 @@ export const generateWAMessageFromContent = (
 			const timestamp = unixTimestampSeconds(options.timestamp)
 	const { quoted, userJid } = options
 	
-	if (quoted && !isJidNewsLetter(jid)) {
+	if (quoted && !isJidNewsletter(jid)) {
 		const participant = quoted.key.fromMe ? userJid : (quoted.participant || quoted.key.participant || quoted.key.remoteJid)
 		
 		let quotedMsg = normalizeMessageContent(quoted.message) !
@@ -745,7 +745,7 @@ export const generateWAMessageFromContent = (
 		// already not converted to disappearing message
 		key !== 'ephemeralMessage' &&
 		// newsletter not accept disappearing messages
-		!isJidNewsLetter(jid)
+		!isJidNewsletter(jid)
 	) {
 		innerMessage[key].contextInfo = {
 			...(innerMessage[key].contextInfo || {}),
