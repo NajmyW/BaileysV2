@@ -324,6 +324,7 @@ export type MediaGenerationOptions = {
     backgroundColor?: string
 
     font?: number
+    newsletter?: boolean
 }
 export type MessageContentGenerationOptions = MediaGenerationOptions & {
 	getUrlInfo?: (text: string) => Promise<WAUrlInfo | undefined>
