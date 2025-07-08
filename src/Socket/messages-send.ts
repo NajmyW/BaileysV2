@@ -476,15 +476,19 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 					await authState.keys.set({ 'sender-key-memory': { [jid]: senderKeyMap } })
 				} else if (isNewsletter) {
 				const patched = await patchMessageBeforeSending(message, [])
+
+				// TAMBAHKAN PENGECEKAN INI
 				if (Array.isArray(patched)) {
-	// Ini seharusnya tidak terjadi untuk newsletter, jadi kita hentikan prosesnya
-				throw new Error('patchMessageBeforeSending returned an array for a single newsletter message')
-			}
-				const bytes = encodeNewsletterMessage(patched)
+					// Ini seharusnya tidak terjadi untuk newsletter, jadi kita hentikan prosesnya
+					throw new Error('patchMessageBeforeSending returned an array for a single newsletter message')
+				}
+				// SETELAH PENGECEKAN, 'patched' DIJAMIN BUKAN ARRAY
+				
+				const bytes = proto.Message.encode(patched).finish() // <-- SEKARANG AMAN
 				
 				binaryNodeContent.push({
 					tag: 'plaintext',
-					attrs: {},
+					attrs: mediaType ? { mediatype: mediaType } : {},
 					content: bytes
 				})
 			} else {
