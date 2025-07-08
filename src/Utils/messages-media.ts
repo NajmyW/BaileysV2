@@ -141,7 +141,6 @@ export const encodeBase64EncodedStringForUpload = (b64: string) => (
 	)
 )
 
-
 export const generateProfilePicture = async(mediaUpload: WAMediaUpload) => {
 	let bufferOrFilePath: Buffer | string
 	if(Buffer.isBuffer(mediaUpload)) {
@@ -205,57 +204,6 @@ export async function getAudioDuration(buffer: Buffer | string | Readable) {
 	return metadata.format.duration
 }
 
-export const prepareStream = async(
-	media: WAMediaUpload,
-	mediaType: MediaType,
-	{ logger, saveOriginalFileIfRequired, opts }: EncryptedStreamOptions = {}
-) => {
-	const { stream, type } = await getStream(media, opts)
-
-	logger?.debug('fetched media stream')
-
-	let bodyPath: string | undefined
-	let didSaveToTmpPath = false
-	try {
-		const buffer = await toBuffer(stream)
-		if(type === 'file') {
-			bodyPath = (media as any).url
-		} else if(saveOriginalFileIfRequired) {
-			bodyPath = join(getTmpFilesDirectory(), mediaType + generateMessageID())
-			writeFileSync(bodyPath, buffer)
-			didSaveToTmpPath = true
-		}
-
-		const fileLength = buffer.length
-		const fileSha256 = Crypto.createHash('sha256').update(buffer).digest()
-
-		stream?.destroy()
-		logger?.debug('prepare stream data successfully')
-
-		return {
-			mediaKey: undefined,
-			encWriteStream: buffer,
-			fileLength,
-			fileSha256,
-			fileEncSha256: undefined,
-			bodyPath,
-			didSaveToTmpPath
-		}
-	} catch (error) {
-		// destroy all streams with error
-		stream.destroy()
-
-		if(didSaveToTmpPath) {
-			try {
-				await fs.unlink(bodyPath!)
-			} catch(err) {
-				logger?.error({ err }, 'failed to save to tmp path')
-			}
-		}
-
-		throw error
-	}
-}
 /**
   referenced from and modifying https://github.com/wppconnect-team/wa-js/blob/main/src/chat/functions/prepareAudioWaveform.ts
  */
@@ -658,44 +606,30 @@ export const getWAUploadToServer = (
 	{ customUploadHosts, fetchAgent, logger, options }: SocketConfig,
 	refreshMediaConn: (force: boolean) => Promise<MediaConnInfo>,
 ): WAMediaUploadFunction => {
-	return async(stream, { mediaType, fileEncSha256B64, newsletter, timeoutMs }) => {
-		const { default: axios } = await import('axios')
+	return async(filePath, { mediaType, fileEncSha256B64, timeoutMs }) => {
 		// send a query JSON to obtain the url & auth token to upload our media
 		let uploadInfo = await refreshMediaConn(false)
 
-		let urls: { mediaUrl: string, directPath: string, handle?: string } | undefined
+		let urls: { mediaUrl: string, directPath: string } | undefined
 		const hosts = [ ...customUploadHosts, ...uploadInfo.hosts ]
 
-		const chunks: Buffer[] | Buffer = []
-		if (!Buffer.isBuffer(stream)) {
-			for await (const chunk of stream) {
-				chunks.push(chunk)
-			}
-		}
-
-		const reqBody = Buffer.isBuffer(stream) ? stream : Buffer.concat(chunks)
 		fileEncSha256B64 = encodeBase64EncodedStringForUpload(fileEncSha256B64)
-		let media = MEDIA_PATH_MAP[mediaType]
-		if (newsletter) {
-			media = media?.replace('/mms/', '/newsletter/newsletter-')
-		}
 
-		for(const { hostname, maxContentLengthBytes } of hosts) {
+		for(const { hostname } of hosts) {
 			logger.debug(`uploading to "${hostname}"`)
 
 			const auth = encodeURIComponent(uploadInfo.auth) // the auth token
-			const url = `https://${hostname}${media}/${fileEncSha256B64}?auth=${auth}&token=${fileEncSha256B64}`
+			const url = `https://${hostname}${MEDIA_PATH_MAP[mediaType]}/${fileEncSha256B64}?auth=${auth}&token=${fileEncSha256B64}`
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			let result: any
 			try {
-				if(maxContentLengthBytes && reqBody.length > maxContentLengthBytes) {
-					throw new Boom(`Body too large for "${hostname}"`, { statusCode: 413 })
-				}
 
 				const body = await axios.post(
 					url,
-					reqBody,
+					createReadStream(filePath),
 					{
 						...options,
+						maxRedirects: 0,
 						headers: {
 							...options.headers || { },
 							'Content-Type': 'application/octet-stream',
@@ -709,11 +643,11 @@ export const getWAUploadToServer = (
 					}
 				)
 				result = body.data
+
 				if(result?.url || result?.directPath) {
 					urls = {
 						mediaUrl: result.url,
-						directPath: result.direct_path,
-						handle: result.handle
+						directPath: result.direct_path
 					}
 					break
 				} else {
@@ -740,6 +674,7 @@ export const getWAUploadToServer = (
 		return urls
 	}
 }
+
 const getMediaRetryKey = (mediaKey: Buffer | Uint8Array) => {
 	return hkdf(mediaKey, 32, { info: 'WhatsApp Media Retry Notification' })
 }

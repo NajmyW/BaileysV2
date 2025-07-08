@@ -124,7 +124,7 @@ export const prepareWAMessageMedia = async(
 			!!uploadData.media.url &&
 			!!options.mediaCache && (
 	// generate the key
-		mediaType + ':' + uploadData.media.url!.toString()
+		mediaType + ':' + uploadData.media.url.toString()
 	)
 
 	if(mediaType === 'document' && !uploadData.fileName) {
@@ -158,13 +158,12 @@ export const prepareWAMessageMedia = async(
 	const requiresOriginalForSomeProcessing = requiresDurationComputation || requiresThumbnailComputation
 	const {
 		mediaKey,
-		encWriteStream,
-		bodyPath,
+		encFilePath,
+		originalFilePath,
 		fileEncSha256,
 		fileSha256,
-		fileLength,
-		didSaveToTmpPath,
-	} = await (options.newsletter ? prepareStream : encryptedStream)(
+		fileLength
+	} = await encryptedStream(
 		uploadData.media,
 		options.mediaTypeOverride || mediaType,
 		{
@@ -174,11 +173,11 @@ export const prepareWAMessageMedia = async(
 		}
 	)
 	 // url safe Base64 encode the SHA256 hash of the body
-	const fileEncSha256B64 = (options.newsletter ? fileSha256 : fileEncSha256 ?? fileSha256).toString('base64')
-	const [{ mediaUrl, directPath, handle }] = await Promise.all([
+	const fileEncSha256B64 = fileEncSha256.toString('base64')
+	const [{ mediaUrl, directPath }] = await Promise.all([
 		(async() => {
 			const result = await options.upload(
-				encWriteStream,
+				encFilePath,
 				{ fileEncSha256B64, mediaType, timeoutMs: options.mediaUploadTimeoutMs }
 			)
 			logger?.debug({ mediaType, cacheableKey }, 'uploaded media')
@@ -190,7 +189,7 @@ export const prepareWAMessageMedia = async(
 					const {
 						thumbnail,
 						originalImageDimensions
-					} = await generateThumbnail(bodyPath!, mediaType as 'image' | 'video', options)
+					} = await generateThumbnail(originalFilePath!, mediaType as 'image' | 'video', options)
 					uploadData.jpegThumbnail = thumbnail
 					if(!uploadData.width && originalImageDimensions) {
 						uploadData.width = originalImageDimensions.width
@@ -202,17 +201,12 @@ export const prepareWAMessageMedia = async(
 				}
 
 				if(requiresDurationComputation) {
-					uploadData.seconds = await getAudioDuration(bodyPath!)
+					uploadData.seconds = await getAudioDuration(originalFilePath!)
 					logger?.debug('computed audio duration')
 				}
 
 				if(requiresWaveformProcessing) {
-					uploadData.waveform = await getAudioWaveform(bodyPath!, logger)
-					logger?.debug('processed waveform')
-				}
-
-				if(requiresWaveformProcessing) {
-					uploadData.waveform = await getAudioWaveform(bodyPath!, logger)
+					uploadData.waveform = await getAudioWaveform(originalFilePath!, logger)
 					logger?.debug('processed waveform')
 				}
 
@@ -227,14 +221,15 @@ export const prepareWAMessageMedia = async(
 	])
 		.finally(
 			async() => {
-				if (!Buffer.isBuffer(encWriteStream)) {
-					encWriteStream.destroy()
-				}
+				try {
+					await fs.unlink(encFilePath)
+					if(originalFilePath) {
+						await fs.unlink(originalFilePath)
+					}
 
-				// remove tmp files
-				if(didSaveToTmpPath && bodyPath) {
-					await fs.unlink(bodyPath)
 					logger?.debug('removed tmp files')
+				} catch(error) {
+					logger?.warn('failed to remove tmp file')
 				}
 			}
 		)
@@ -242,13 +237,13 @@ export const prepareWAMessageMedia = async(
 	const obj = WAProto.Message.fromObject({
 		[`${mediaType}Message`]: MessageTypeProto[mediaType].fromObject(
 			{
-				url:  handle ? undefined : mediaUrl,
+				url: mediaUrl,
 				directPath,
-				mediaKey: mediaKey,
-				fileEncSha256: fileEncSha256,
+				mediaKey,
+				fileEncSha256,
 				fileSha256,
 				fileLength,
-				mediaKeyTimestamp: handle ? undefined : unixTimestampSeconds(),
+				mediaKeyTimestamp: unixTimestampSeconds(),
 				...uploadData,
 				media: undefined
 			}
@@ -267,6 +262,7 @@ export const prepareWAMessageMedia = async(
 
 	return obj
 }
+
 
 
 export const prepareDisappearingMessageSettingContent = (ephemeralExpiration?: number) => {

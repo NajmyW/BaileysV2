@@ -963,11 +963,7 @@ return nodeContent.some(a =>
 							: undefined
 						},
 				   ),
-				   upload: async (readStream: Readable, opts: WAMediaUploadFunctionOpts) => {
-					const up = await waUploadToServer(readStream, { ...opts })
-					mediaHandle = up.handle
-					return up
-				},
+				   upload: waUploadToServer,
 				   mediaCache: config.mediaCache,
 				   options: config.options,
                    backgroundColor: getRandomHexColor(),
@@ -1115,11 +1111,7 @@ return nodeContent.some(a =>
 						),
 						//TODO: CACHE
 						getProfilePicUrl: sock.profilePictureUrl,
-						upload: async (readStream: Readable, opts: WAMediaUploadFunctionOpts) => {
-						const up = await waUploadToServer(readStream, { ...opts })
-						mediaHandle = up.handle
-						return up
-					},
+						upload: waUploadToServer,
 						mediaCache: config.mediaCache,
 						options: config.options,
 						messageId: generateMessageIDV2(sock.user?.id),
