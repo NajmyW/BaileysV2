@@ -39,8 +39,10 @@ export function decodeMessageNode(
 	let chatId: string
 	let author: string
 
+	const senderPn: string | undefined = stanza?.attrs?.sender_pn
+	const fromAttr: string = stanza?.attrs?.from
 	const msgId = stanza.attrs.id
-	const from = stanza.attrs.from
+	const from = isLidUser(fromAttr) && isJidUser(senderPn) ? senderPn : fromAttr
 	const participant: string | undefined = stanza.attrs.participant
 	const recipient: string | undefined = stanza.attrs.recipient
 
