@@ -18,9 +18,6 @@ import {
 	MessageType,
 	MessageUserReceipt,
 	WAMediaUpload,
-	getStream,
-	MediaDownloadOptions,
-	toBuffer,
 	WAMessage,
 	WAMessageContent,
 	WAMessageStatus,
@@ -29,9 +26,9 @@ import {
 } from '../Types'
 import { isJidGroup, isJidStatusBroadcast, isJidNewsletter, jidNormalizedUser } from '../WABinary'
 import { sha256 } from './crypto'
-import { generateMessageID, getKeyAuthor, unixTimestampSeconds } from './generics'
+import { generateMessageID, generateMessageIDV2, getKeyAuthor, unixTimestampSeconds } from './generics'
 import { ILogger } from './logger'
-import { downloadContentFromMessage, encryptedStream, generateThumbnail, getAudioDuration, getAudioWaveform, MediaDownloadOptions } from './messages-media'
+import { downloadContentFromMessage, encryptedStream, generateThumbnail, getAudioDuration, getAudioWaveform, getStream, MediaDownloadOptions, toBuffer } from './messages-media'
 const ButtonType = proto.Message.ButtonsMessage.HeaderType
 type MediaUploadData = {
 	media: WAMediaUpload
