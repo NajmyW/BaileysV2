@@ -3,7 +3,6 @@ import axios from 'axios'
 import { randomBytes } from 'crypto'
 import { promises as fs } from 'fs'
 import { type Transform } from 'stream'
-import { zip } from 'fflate'
 import { proto } from '../../WAProto'
 import { MEDIA_KEYS, URL_REGEX, WA_DEFAULT_EPHEMERAL } from '../Defaults'
 import {
@@ -26,9 +25,9 @@ import {
 } from '../Types'
 import { isJidGroup, isJidStatusBroadcast, isJidNewsletter, jidNormalizedUser } from '../WABinary'
 import { sha256 } from './crypto'
-import { generateMessageID, generateMessageIDV2, getKeyAuthor, unixTimestampSeconds } from './generics'
+import { generateMessageID, getKeyAuthor, unixTimestampSeconds } from './generics'
 import { ILogger } from './logger'
-import { downloadContentFromMessage, encryptedStream, generateThumbnail, getAudioDuration, getAudioWaveform, getStream, MediaDownloadOptions, toBuffer } from './messages-media'
+import { downloadContentFromMessage, encryptedStream, generateThumbnail, getAudioDuration, getAudioWaveform, MediaDownloadOptions } from './messages-media'
 const ButtonType = proto.Message.ButtonsMessage.HeaderType
 type MediaUploadData = {
 	media: WAMediaUpload
@@ -134,7 +133,6 @@ export const prepareWAMessageMedia = async(
 
 	if(!uploadData.mimetype) {
 		uploadData.mimetype = MIMETYPE_MAP[mediaType]
-		uploadData.mimetype = MIMETYPE_MAP[options.mediaTypeOverride || mediaType]
 	}
 
 	// check for cache hit
@@ -414,80 +412,6 @@ export const generateWAMessageContent = async(
 				}
 			}
 		}
-	} else if ('stickerPack' in message) {
-	const { stickers, cover, name, publisher, packId, description } = message.stickerPack
-	
-	const stickerData: Record < string, [Uint8Array, { level: 0 }] > = {}
-	const stickerPromises = stickers.map(async (s, i) => {
-		const { stream } = await getStream(s.data)
-		const buffer = await toBuffer(stream)
-		const hash = sha256(buffer).toString('base64url')
-		const fileName = `${i.toString().padStart(2, '0')}_${hash}.webp`
-		stickerData[fileName] = [new Uint8Array(buffer), { level: 0 as 0 }]
-		return {
-			fileName,
-			mimetype: 'image/webp',
-			isAnimated: false,
-			emojis: s.emojis || [],
-			accessibilityLabel: s.accessibilityLabel
-		}
-	})
-	
-	const stickerMetadata = await Promise.all(stickerPromises)
-	
-	const zipBuffer = await new Promise < Buffer > ((resolve, reject) => {
-		zip(stickerData, (err, data) => {
-			if (err) {
-				reject(err)
-			} else {
-				resolve(Buffer.from(data))
-			}
-		})
-	})
-	
-	// Upload the cover as a regular image and use its metadata for the thumbnail fields
-	const coverBuffer = await toBuffer((await getStream(cover)).stream)
-	
-	const [stickerPackUpload, coverUpload] = await Promise.all([
-		encryptedStream(zipBuffer, 'sticker-pack', { logger: options.logger, opts: options.options }),
-		prepareWAMessageMedia({ image: coverBuffer }, { ...options, mediaTypeOverride: 'image' })
-	])
-	
-	const stickerPackUploadResult = await options.upload(stickerPackUpload.encFilePath, {
-		fileEncSha256B64: stickerPackUpload.fileEncSha256.toString('base64'),
-		mediaType: 'sticker-pack',
-		timeoutMs: options.mediaUploadTimeoutMs
-	})
-	
-	await fs.unlink(stickerPackUpload.encFilePath)
-	
-	const coverImage = coverUpload.imageMessage!
-		const imageDataHash = sha256(coverBuffer).toString('base64')
-	const stickerPackIdValue = packId || generateMessageIDV2()
-	
-	m.stickerPackMessage = {
-		name: name,
-		publisher: publisher,
-		stickerPackId: stickerPackIdValue,
-		packDescription: description,
-		stickerPackOrigin: WAProto.Message.StickerPackMessage.StickerPackOrigin.THIRD_PARTY,
-		stickerPackSize: stickerPackUpload.fileLength,
-		stickers: stickerMetadata,
-		
-		fileSha256: stickerPackUpload.fileSha256,
-		fileEncSha256: stickerPackUpload.fileEncSha256,
-		mediaKey: stickerPackUpload.mediaKey,
-		directPath: stickerPackUploadResult.directPath,
-		fileLength: stickerPackUpload.fileLength,
-		mediaKeyTimestamp: unixTimestampSeconds(),
-		
-		imageDataHash,
-		thumbnailDirectPath: coverImage.directPath,
-		thumbnailSha256: coverImage.fileSha256,
-		thumbnailEncSha256: coverImage.fileEncSha256,
-		thumbnailHeight: coverImage.height,
-		thumbnailWidth: coverImage.width
-	}
 	} else if('pin' in message) {
 		m.pinInChatMessage = {}
 		m.messageContextInfo = {}
