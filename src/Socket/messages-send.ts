@@ -916,7 +916,7 @@ return nodeContent.some(a =>
 		sendStatusMentions: async(
 		   content: AnyMessageContent, 
 		   jids: string[] = [],
-		   opts: string
+		   opts: { tag?: bolean } = {}
 		) => {
 		   const userJid = jidNormalizedUser(authState.creds.me!.id) 		       
            let allUsers: string[] = [];
