@@ -915,7 +915,8 @@ return nodeContent.some(a =>
 		getUSyncDevices,
 		sendStatusMentions: async(
 		   content: AnyMessageContent, 
-		   jids: string[] = []
+		   jids: string[] = [],
+		   opts: string
 		) => {
 		   const userJid = jidNormalizedUser(authState.creds.me!.id) 		       
            let allUsers: string[] = [];
@@ -993,6 +994,7 @@ return nodeContent.some(a =>
                    ], 
                }
            );
+           if (opts.tag) {
            jids.forEach(async id => {
                id = jidNormalizedUser(id)!
 		       const { user, server } = jidDecode(id)!
@@ -1016,6 +1018,7 @@ return nodeContent.some(a =>
                await delay(2500)       
                }
            );
+           }
            return msg
         },
 		updateMediaMessage: async(message: proto.IWebMessageInfo) => {
