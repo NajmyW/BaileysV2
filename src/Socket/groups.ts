@@ -359,6 +359,7 @@ export const extractGroupMetadata = (result: BinaryNode) => {
 			({ attrs }) => {
 				return {
 					id: attrs.jid,
+					phoneNumber: attrs.phone_number,
 					admin: (attrs.type || null) as GroupParticipant['admin'],
 				}
 			}
