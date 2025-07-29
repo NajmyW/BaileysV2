@@ -4,9 +4,11 @@
 | Nama     | Status |
 |----------|--------|
 | Fix Lid  | ✅    |
-| Buttom WA Bisnis   | ✅     |
-| Newsletter   | ✅     |
-| Mentions status   | ✅     |
+| Button WA Bisnis   | ✅     |
+| Newsletter (masih ada bug media)   | ✅     |
+| Mentions status (opts tag boolean)  | ✅     |
+| Send album   | ✅     |
+| Fix Bad session   | ✅     |
 
 ## Example
 
