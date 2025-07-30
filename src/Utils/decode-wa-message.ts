@@ -43,7 +43,7 @@ export function decodeMessageNode(
 	const fromAttr: string = stanza?.attrs?.from
 	const msgId = stanza.attrs.id
 	const from = isLidUser(fromAttr) && isJidUser(senderPn) ? senderPn : fromAttr
-	const participant: string | undefined = (stanza.attrs.phone_number || stanza.attrs.participant)
+	const participant: string | undefined = stanza.attrs.participant
 	const recipient: string | undefined = stanza.attrs.recipient
 
 	const isMe = (jid: string) => areJidsSameUser(jid, meId)
@@ -93,7 +93,7 @@ export function decodeMessageNode(
 	}
 
 	const fromMe = isJidNewsletter(from) ? !!stanza.attrs?.is_sender || false : (isLidUser(from) ? isMeLid : isMe)(stanza.attrs.participant || stanza.attrs.from)
-	const pushname = stanza?.attrs?.notify
+const pushname = stanza?.attrs?.notify
 
 	const key: WAMessageKey = {
 		remoteJid: chatId,
