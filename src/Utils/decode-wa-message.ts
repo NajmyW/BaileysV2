@@ -43,7 +43,7 @@ export function decodeMessageNode(
 	const fromAttr: string = stanza?.attrs?.from
 	const msgId = stanza.attrs.id
 	const from = isLidUser(fromAttr) && isJidUser(senderPn) ? senderPn : fromAttr
-	const participant: string | undefined = (attrs.phone_number || stanza.attrs.participant)
+	const participant: string | undefined = (stanza.attrs.phone_number || stanza.attrs.participant)
 	const recipient: string | undefined = stanza.attrs.recipient
 
 	const isMe = (jid: string) => areJidsSameUser(jid, meId)
