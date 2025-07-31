@@ -928,7 +928,7 @@ return nodeContent.some(a =>
               if(isGroup) {
                  let userId = await groupMetadata(id)
                  let participant = await userId.participants
-                 let users = await Promise.all(participant.map(u => jidNormalizedUser(u.id))); 
+                 let users = await Promise.all(participant.map(u => jidNormalizedUser(u.phoneNumber))); 
                  allUsers = [...allUsers as string[], ...users as string[]];
               } else if(isPerson) {
                  let users = await Promise.all(jids.map(id => id.replace(/\b\d{18}@.{4}\b/g, '')));
