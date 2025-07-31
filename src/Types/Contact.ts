@@ -1,5 +1,6 @@
 export interface Contact {
     id: string
+    phoneNumber?: string
     lid?: string
     /** name of the contact, you have saved on your WA */
     name?: string
