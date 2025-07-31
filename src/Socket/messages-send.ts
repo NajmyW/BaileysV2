@@ -1114,7 +1114,11 @@ return nodeContent.some(a =>
 						),
 						//TODO: CACHE
 						getProfilePicUrl: sock.profilePictureUrl,
-						upload: waUploadToServer,
+						upload: async (readStream: Readable, opts: WAMediaUploadFunctionOpts) => {
+				const up = await waUploadToServer(readStream, { ...opts, newsletter: isJidNewsletter(jid) })
+				mediaHandle = up.handle
+				return up
+			},
 						mediaCache: config.mediaCache,
 						options: config.options,
 						messageId: generateMessageIDV2(sock.user?.id),
