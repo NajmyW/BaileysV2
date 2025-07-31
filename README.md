@@ -10,6 +10,25 @@
 | Send album   | ✅     |
 | Fix Bad session   | ✅     |
 
+## Example
+
+Here is an example you can use: [example.ts](Example/example.ts) or here is a tutorial for running the Baileys WhatsApp API code
+1. ``` cd path/to/Baileys ```
+2. ``` npm install```
+3. ``` node example.js```
+
+## Install
+
+Use the stable version:
+```bash
+npm install @whiskeysockets/baileys
+```
+
+Use the edge version (no guarantee of stability, but latest fixes + features)
+```bash
+yarn add @whiskeysockets/baileys@latest
+```
+
 Then import your code using:
 ```javascript
 const { default: makeWASocket } = require("@whiskeysockets/baileys")
