@@ -221,6 +221,7 @@ export async function uploadingNecessaryImagesOfProduct<T extends ProductUpdate 
 /**
  * Uploads images not already uploaded to WA's servers
  */
+ /*
 export const uploadingNecessaryImages = async(
 	images: WAMediaUpload[],
 	waUploadToServer: WAMediaUploadFunction,
@@ -269,7 +270,47 @@ export const uploadingNecessaryImages = async(
 	)
 	return results
 }
+*/
+export const uploadingNecessaryImages = async(
+	images: WAMediaUpload[],
+	waUploadToServer: WAMediaUploadFunction,
+	timeoutMs = 30_000
+) => {
+	const results = await Promise.all(
+		images.map<Promise<{ url: string }>>(
+			async img => {
 
+				if('url' in img) {
+					const url = img.url.toString()
+					if(url.includes('.whatsapp.net')) {
+						return { url }
+					}
+				}
+
+				const { stream } = await getStream(img)
+				const hasher = createHash('sha256')
+				const contentBlocks: Buffer[] = []
+				for await (const block of stream) {
+					hasher.update(block)
+					contentBlocks.push(block)
+				}
+
+				const sha = hasher.digest('base64')
+
+				const { directPath } = await waUploadToServer(
+					toReadable(Buffer.concat(contentBlocks)),
+					{
+						mediaType: 'product-catalog-image',
+						fileEncSha256B64: sha,
+						timeoutMs
+					}
+				)
+				return { url: getUrlFromDirectPath(directPath) }
+			}
+		)
+	)
+	return results
+}
 const parseImageUrls = (mediaNode: BinaryNode) => {
 	const imgNode = getBinaryNodeChild(mediaNode, 'image')
 	return {
