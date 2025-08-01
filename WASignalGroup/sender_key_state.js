@@ -45,7 +45,6 @@ class SenderKeyState {
             this.senderChainKey = senderChainKeyStructure;
             this.senderKeyStateStructure.senderSigningKey = signingKeyStructure;
         }
-        if (!this.senderKeyStateStructure.senderMessageKeys) return
         this.senderKeyStateStructure.senderMessageKeys =
             this.senderKeyStateStructure.senderMessageKeys || [];
     }
