@@ -1,6 +1,5 @@
 const SenderChainKey = require('./sender_chain_key');
 const SenderMessageKey = require('./sender_message_key');
-
 const protobufs = require('./protobufs');
 
 class SenderKeyState {
@@ -32,20 +31,21 @@ class SenderKeyState {
 
             const signingKeyStructure = protobufs.SenderSigningKey.create();
             signingKeyStructure.public =
-                typeof signatureKeyPublic === 'string' ?
-                Buffer.from(signatureKeyPublic, 'base64') :
-                signatureKeyPublic;
+                typeof signatureKeyPublic === 'string'
+                    ? Buffer.from(signatureKeyPublic, 'base64')
+                    : signatureKeyPublic;
             if (signatureKeyPrivate) {
                 signingKeyStructure.private =
-                    typeof signatureKeyPrivate === 'string' ?
-                    Buffer.from(signatureKeyPrivate, 'base64') :
-                    signatureKeyPrivate;
+                    typeof signatureKeyPrivate === 'string'
+                        ? Buffer.from(signatureKeyPrivate, 'base64')
+                        : signatureKeyPrivate;
             }
+
             this.senderKeyStateStructure.senderKeyId = id;
             this.senderChainKey = senderChainKeyStructure;
             this.senderKeyStateStructure.senderSigningKey = signingKeyStructure;
         }
-        if (!this.senderKeyStateStructure.senderMessageKeys) return
+
         this.senderKeyStateStructure.senderMessageKeys =
             this.senderKeyStateStructure.senderMessageKeys || [];
     }
@@ -74,15 +74,15 @@ class SenderKeyState {
     }
 
     getSigningKeyPublic() {
-        return typeof this.senderKeyStateStructure.senderSigningKey.public === 'string' ?
-            Buffer.from(this.senderKeyStateStructure.senderSigningKey.public, 'base64') :
-            this.senderKeyStateStructure.senderSigningKey.public;
+        return typeof this.senderKeyStateStructure.senderSigningKey.public === 'string'
+            ? Buffer.from(this.senderKeyStateStructure.senderSigningKey.public, 'base64')
+            : this.senderKeyStateStructure.senderSigningKey.public;
     }
 
     getSigningKeyPrivate() {
-        return typeof this.senderKeyStateStructure.senderSigningKey.private === 'string' ?
-            Buffer.from(this.senderKeyStateStructure.senderSigningKey.private, 'base64') :
-            this.senderKeyStateStructure.senderSigningKey.private;
+        return typeof this.senderKeyStateStructure.senderSigningKey.private === 'string'
+            ? Buffer.from(this.senderKeyStateStructure.senderSigningKey.private, 'base64')
+            : this.senderKeyStateStructure.senderSigningKey.private;
     }
 
     hasSenderMessageKey(iteration) {
@@ -99,6 +99,10 @@ class SenderKeyState {
             iteration: senderMessageKey.getIteration(),
             seed: senderMessageKey.getSeed(),
         });
+
+        this.senderKeyStateStructure.senderMessageKeys =
+            this.senderKeyStateStructure.senderMessageKeys || [];
+
         this.senderKeyStateStructure.senderMessageKeys.push(senderMessageKeyStructure);
 
         if (this.senderKeyStateStructure.senderMessageKeys.length > this.MAX_MESSAGE_KEYS) {
@@ -109,12 +113,11 @@ class SenderKeyState {
     removeSenderMessageKey(iteration) {
         let result = null;
 
-        this.senderKeyStateStructure.senderMessageKeys = this.senderKeyStateStructure.senderMessageKeys.filter(
-            senderMessageKey => {
+        this.senderKeyStateStructure.senderMessageKeys =
+            this.senderKeyStateStructure.senderMessageKeys.filter(senderMessageKey => {
                 if (senderMessageKey.iteration === iteration) result = senderMessageKey;
                 return senderMessageKey.iteration !== iteration;
-            }
-        );
+            });
 
         if (result != null) {
             return new SenderMessageKey(result.iteration, result.seed);
