@@ -100,7 +100,7 @@ const pushname = stanza?.attrs?.notify
 	fromMe,
 	id: msgId,
 	senderLid: stanza?.attrs?.sender_lid,
-	senderPn: stanza?.attrs?.sender_pn,
+	senderPn: stanza?.attrs?.phoneNumber,
 	participant,
 	participantPn: stanza?.attrs?.participant_pn,
 	participantLid: stanza?.attrs?.participant_lid,
