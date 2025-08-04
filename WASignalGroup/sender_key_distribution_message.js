@@ -24,7 +24,8 @@ class SenderKeyDistributionMessage extends CiphertextMessage {
         this.chainKey = distributionMessage.chainKey;
         this.signatureKey = distributionMessage.signingKey;
       } catch (e) {
-        throw new Error(e);
+        return
+        // throw new Error(e);
       }
     } else {
       const version = this.intsToByteHighAndLow(this.CURRENT_VERSION, this.CURRENT_VERSION);
