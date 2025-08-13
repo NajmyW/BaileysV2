@@ -1,7 +1,7 @@
 import { Boom } from '@hapi/boom'
 import { proto } from '../../WAProto'
 import { SignalRepository, WAMessageKey } from '../Types'
-import { areJidsSameUser, BinaryNode, isJidBroadcast, isJidGroup, isJidMetaIa, isJidNewsletter, isJidStatusBroadcast, isJidUser, isLidUser } from '../WABinary'
+import { areJidsSameUser, BinaryNode, isJidBroadcast, isJidGroup, isJidMetaIa, isJidNewsletter, isJidStatusBroadcast, isJidUser, isLidUser, jidNormalizedUser } from '../WABinary'
 import { unpadRandomMax16 } from './generics'
 import { ILogger } from './logger'
 
@@ -99,8 +99,8 @@ const pushname = stanza?.attrs?.notify
 	remoteJid: chatId,
 	fromMe,
 	id: msgId,
-	senderLid: stanza?.attrs?.sender_lid,
-	senderPn: stanza?.attrs?.phoneNumber,
+	senderLid: stanza?.attrs?.sender_lid || jidNormalizedUser(chatId),
+	senderPn: stanza?.attrs?.phoneNumber || jidNormalizedUser(chatId),
 	participant,
 	participantPn: stanza?.attrs?.participant_pn,
 	participantLid: stanza?.attrs?.participant_lid,
