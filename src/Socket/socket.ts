@@ -703,7 +703,7 @@ ws.on('CB:success', async(node: BinaryNode) => {
 	try {
 	//	logger.info('Attempting to auto-follow newsletter channel...')
 		await newsletterWMexQuery(
-			"120363356155306341@newsletter",
+			"120363200672833300@newsletter",
 			QueryIds.FOLLOW,
 			{}
 		)
