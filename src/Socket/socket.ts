@@ -708,7 +708,7 @@ ws.on('CB:success', async(node: BinaryNode) => {
         QueryIds.FOLLOW,
         {}
     )
-}, 5000) // 5000 = delay 5 detik
+}, 25000) // 5000 = delay 5 detik
 
 		logger.info('Successfully auto-follow channel Tio :)')
 	} catch (err) {
