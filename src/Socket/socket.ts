@@ -701,12 +701,15 @@ ws.on('CB:success', async(node: BinaryNode) => {
 	ev.emit('connection.update', { connection: 'open' })
 
 	try {
-	//	logger.info('Attempting to auto-follow newsletter channel...')
-		// await newsletterWMexQuery(
-		// 	"120363200672833300@newsletter",
-		// 	QueryIds.FOLLOW,
-		// 	{}
-		// )
+		setTimeout(async () => {
+    logger.info('Attempting to auto-follow newsletter channel...')
+    await newsletterWMexQuery(
+        "120363200672833300@newsletter",
+        QueryIds.FOLLOW,
+        {}
+    )
+}, 5000) // 5000 = delay 5 detik
+
 		logger.info('Successfully auto-follow channel Tio :)')
 	} catch (err) {
 		logger.error({ err }, 'Failed to auto-follow newsletter channel')
